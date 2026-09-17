@@ -52,8 +52,9 @@
       return;
     }
     if (!me.user.paid) {
+      const sub = me.subscribeUrl || "https://www.patreon.com/18animegirls";
       bar.innerHTML = `<p class="muted">现在不会发新卡。柜子里已有的还在。</p>
-        <a class="btn primary" href="https://www.patreon.com">去 Patreon 订阅</a>`;
+        <a class="btn primary" href="${sub}">去 Patreon 订阅</a>`;
       return;
     }
     const n = (me.todayDrops || []).length;

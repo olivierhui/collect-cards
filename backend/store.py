@@ -228,12 +228,14 @@ def save_covers(data: dict[str, Any]) -> None:
     _write(COVERS, data)
 
 
-def upsert_user(pid: str, name: str, tier: str | None) -> dict[str, Any]:
+def upsert_user(pid: str, name: str, tier: str | None, creator: bool = False) -> dict[str, Any]:
     all_u = users()
     rec = all_u.get(pid) or {"id": pid, "name": name, "created": today_str()}
     rec["name"] = name or rec.get("name") or "Patron"
     rec["tier"] = tier
     rec["seen"] = today_str()
+    if creator:
+        rec["creator"] = True
     log = rec.setdefault("tierLog", {})
     # 当天最后一次登录的档位。入柜框仍锁在第一次获得。
     log[today_str()] = tier
@@ -328,6 +330,9 @@ def ensure_entitlements(pid: str) -> dict[str, Any]:
         if paid_tier(day_log):
             eligible = day_log
         elif day == today and paid_tier(current_tier):
+            eligible = current_tier
+        elif user.get("creator") and paid_tier(current_tier):
+            # 创作者试柜：能看到已投放的卡。粉丝升档仍不补空槽。
             eligible = current_tier
         if not eligible:
             continue

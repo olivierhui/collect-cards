@@ -36,8 +36,10 @@ def current_user(request: Request) -> dict | None:
     return store.users().get(pid)
 
 
-def login_and_grant(request: Request, pid: str, name: str, tier: str | None) -> None:
-    store.upsert_user(pid, name, tier)
+def login_and_grant(
+    request: Request, pid: str, name: str, tier: str | None, creator: bool = False
+) -> None:
+    store.upsert_user(pid, name, tier, creator=creator)
     request.session["pid"] = pid
     store.ensure_entitlements(pid)
 
@@ -64,11 +66,13 @@ async def me(request: Request):
             "id": user["id"],
             "name": user.get("name"),
             "paid": store.paid_tier(user.get("tier")),
+            "creator": bool(user.get("creator")),
             "mock": str(user.get("id") or "").startswith("mock-"),
         },
         "today": store.today_str(),
         "todayDrops": store.drops_for_date(store.today_str()),
         "patreonReady": patreon.configured(),
+        "subscribeUrl": os.getenv("PATREON_PAGE_URL") or "https://www.patreon.com/18animegirls",
     }
 
 
@@ -91,7 +95,8 @@ async def auth_callback(request: Request, code: str = "", state: str = ""):
     if not pid:
         raise HTTPException(400, "读不到 Patreon 用户")
     tier, name = patreon.map_tier(ident)
-    login_and_grant(request, pid, name, tier)
+    creator = patreon.is_campaign_creator(ident)
+    login_and_grant(request, pid, name, tier, creator=creator)
     return RedirectResponse("/")
 
 
