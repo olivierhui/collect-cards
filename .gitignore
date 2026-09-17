@@ -1,0 +1,14 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
+data/users.json
+data/inventory.json
+data/claims.json
+data/covers.json
+*.zip
+backend/__pycache__/
