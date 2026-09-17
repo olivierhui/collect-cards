@@ -224,6 +224,7 @@ async def admin_state(request: Request):
         "characters": chars,
         "codes": store.list_card_codes(),
         "github": github_sync.enabled(),
+        "layout": store.site_layout(),
     }
 
 
@@ -244,7 +245,89 @@ async def admin_save(request: Request):
         "characters": live.get("characters") or [],
         "today": store.today_str(),
         "github": gh,
+        "layout": store.site_layout(),
     }
+
+
+@app.get("/api/admin/drop-impact")
+async def admin_drop_impact(request: Request, code: str = ""):
+    require_creator(request)
+    code = (code or "").strip()
+    if not store.FOLDER_RE.match(code):
+        raise HTTPException(400, "编号必须是 S1-001-1 这种")
+    return {"ok": True, **store.drop_impact(code)}
+
+
+@app.post("/api/admin/drop-fix")
+async def admin_drop_fix(request: Request):
+    require_creator(request)
+    body = await request.json()
+    try:
+        result = store.fix_drop(
+            action=str(body.get("action") or ""),
+            code=str(body.get("code") or ""),
+            day=str(body.get("day") or ""),
+            new_code=str(body.get("newCode") or ""),
+            new_day=str(body.get("newDay") or ""),
+            inventory_mode=str(body.get("inventory") or "keep"),
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    gh = await github_sync.push_data_files(
+        f"admin: drop-fix {result.get('action')} {result.get('code')}"
+    )
+    result["github"] = gh
+    return result
+
+
+@app.post("/api/admin/schedule")
+async def admin_schedule(request: Request):
+    require_creator(request)
+    body = await request.json()
+    code = str(body.get("code") or "").strip()
+    day = str(body.get("day") or "").strip() or store.today_str()
+    try:
+        rec = store.register_drop(code, day, str(body.get("name") or ""), str(body.get("title") or ""))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    await github_sync.push_data_files(f"admin: schedule {code} {day}")
+    return rec
+
+
+@app.get("/api/admin/library")
+async def admin_library(request: Request):
+    require_creator(request)
+    cat = store.catalog()
+    drops = cat.get("_drops") or {}
+    by_code_day: dict[str, list[str]] = {}
+    for day, codes in drops.items():
+        for code in codes:
+            by_code_day.setdefault(code, []).append(day)
+    items = []
+    for card in store.scan_disk_cards():
+        items.append(
+            {
+                "code": card["code"],
+                "name": card.get("name") or "",
+                "date": card.get("date") or "",
+                "characterId": card["characterId"],
+                "days": by_code_day.get(card["code"]) or [],
+                "thumb": f"/api/admin/assets/{card['code']}/original.png",
+                "holders": len(store.holders_of(card["code"])),
+            }
+        )
+    return {"ok": True, "today": store.today_str(), "cards": items}
+
+
+@app.get("/api/admin/assets/{code}/{filename}")
+async def admin_asset(code: str, filename: str, request: Request):
+    require_creator(request)
+    if filename not in {"original.png", "subject.png", "background.png"}:
+        raise HTTPException(404, "not allowed")
+    path = store.card_dir(code) / filename
+    if not path.is_file():
+        raise HTTPException(404)
+    return FileResponse(path)
 
 
 @app.post("/api/admin/card-zip")

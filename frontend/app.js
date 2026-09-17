@@ -35,7 +35,7 @@
          <a class="btn" href="/auth/mock?tier=t5">模拟 T5</a>
          <a class="btn" href="/auth/mock?tier=none">模拟未订</a>`
       : "";
-    const adminLink = me.user.creator || me.user.mock ? `<a class="btn" href="/admin">后台</a>` : "";
+    const adminLink = me.user.creator || me.user.mock ? `<a class="btn" href="/admin">表单后台</a>` : "";
     box.innerHTML = `
       <span class="muted">${me.user.name}</span>
       ${adminLink}
@@ -95,27 +95,37 @@
       root.innerHTML = "";
       return;
     }
+    const editing = window.CabinetEditor && window.CabinetEditor.on;
+    const hiddenSlots = new Set((me.site && me.site.layout && me.site.layout.hiddenSlots) || []);
     root.innerHTML = cabinet.slots
+      .filter((s) => editing || !hiddenSlots.has(s.characterId))
       .map((s) => {
         const cover = s.cover;
         const v = cover ? cover.variant : "";
         const img = cover && cover.code ? `/api/assets/${cover.code}/original.png` : "";
+        const hid = hiddenSlots.has(s.characterId) ? " ed-hidden-slot" : "";
         if (!s.owned) {
-          return `<article class="slot empty" data-cid="${s.characterId}">
+          return `<article class="slot empty${hid}" data-cid="${s.characterId}">
             <div class="code">${s.slot}</div>
             <div class="empty-label">空位</div>
+            <div class="ed-name-tag">${s.name || ""}</div>
           </article>`;
         }
-        return `<article class="slot ${v}" data-cid="${s.characterId}">
+        return `<article class="slot ${v}${hid}" data-cid="${s.characterId}">
           <div class="code">${s.slot}</div>
           <img src="${img}" alt="${s.name || s.slot}">
           <div class="count">已有 ${s.owned} 张</div>
+          <div class="ed-name-tag">${s.name || ""}</div>
         </article>`;
       })
       .join("");
-    root.querySelectorAll(".slot:not(.empty)").forEach((el) => {
-      el.onclick = () => openSlot(el.dataset.cid);
-    });
+    if (!window.CabinetEditor || !window.CabinetEditor.on) {
+      root.querySelectorAll(".slot:not(.empty)").forEach((el) => {
+        el.onclick = () => openSlot(el.dataset.cid);
+      });
+    } else if (window.CabinetEditor.bindSlots) {
+      window.CabinetEditor.bindSlots();
+    }
   }
 
   async function openSlot(cid) {
@@ -198,9 +208,23 @@
     const kicker = document.querySelector(".kicker");
     const title = document.querySelector(".top h1");
     const gate = document.querySelector("#gate p");
+    const noteWrap = document.querySelector("#page-note");
+    const note = document.querySelector("#ed-note");
     if (kicker && site.kicker) kicker.textContent = site.kicker;
     if (title && site.title) title.textContent = site.title;
     if (gate && site.gate) gate.textContent = site.gate;
+    if (note) note.textContent = site.note || "";
+    if (noteWrap) {
+      const editing = window.CabinetEditor && window.CabinetEditor.on;
+      noteWrap.classList.toggle("hidden", !editing && !(site.note || "").trim());
+    }
+    const hidden = new Set((site.layout && site.layout.hiddenBlocks) || []);
+    document.querySelectorAll("[data-block]").forEach((el) => {
+      if (el.id === "cabinet") return;
+      el.classList.toggle("ed-block-off", hidden.has(el.dataset.block));
+    });
+    if (kicker) kicker.classList.toggle("ed-block-off", hidden.has("kicker"));
+    if (title) title.classList.toggle("ed-block-off", hidden.has("title"));
   }
 
   async function boot() {
@@ -216,7 +240,19 @@
       }
     } else cabinet = null;
     renderCabinet();
+    if (window.CabinetEditor) window.CabinetEditor.mount();
   }
+
+  window.__cabinet = {
+    get me() { return me; },
+    set me(v) { me = v; },
+    get cabinet() { return cabinet; },
+    set cabinet(v) { cabinet = v; },
+    api,
+    boot,
+    renderCabinet,
+    applySite,
+  };
 
   boot().catch((e) => {
     $("#status-bar").textContent = e.message;

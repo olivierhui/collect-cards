@@ -40,6 +40,12 @@ SITE_DEFAULT = {
     "subscribeUrl": "https://www.patreon.com/18animegirls",
     "subscribeLabel": "去 Patreon 订阅",
     "pageTitle": "收集卡系列 · 展示柜",
+    "note": "",
+    "layout": {
+        "slotOrder": [],
+        "hiddenSlots": [],
+        "hiddenBlocks": [],
+    },
 }
 
 DATA.mkdir(parents=True, exist_ok=True)
@@ -487,12 +493,27 @@ def cabinet(pid: str) -> dict[str, Any]:
                 "todayDrop": cid in today_chars,
             }
         )
+    lay = site_layout()
+    order = [str(x).zfill(3) for x in (lay.get("slotOrder") or [])]
+    if order:
+        by_id = {r["characterId"]: r for r in rows}
+        ordered = []
+        seen: set[str] = set()
+        for cid in order:
+            if cid in by_id and cid not in seen:
+                ordered.append(by_id[cid])
+                seen.add(cid)
+        for r in rows:
+            if r["characterId"] not in seen:
+                ordered.append(r)
+        rows = ordered
     return {
         "season": season,
         "seasonTitle": cat.get("seasonTitle") or season,
         "today": today_str(),
         "todayDrops": today_codes,
         "slots": rows,
+        "layout": lay,
     }
 
 
@@ -553,10 +574,47 @@ def site() -> dict[str, Any]:
 def save_site(payload: dict[str, Any]) -> dict[str, Any]:
     cur = site()
     for key in SITE_DEFAULT:
-        if key in payload and payload[key] is not None:
-            cur[key] = str(payload[key]).strip()
+        if key not in payload or payload[key] is None:
+            continue
+        if key == "layout":
+            continue
+        cur[key] = str(payload[key]).strip()
+    if isinstance(payload.get("layout"), dict):
+        cur["layout"] = _normalize_layout(payload["layout"], cur.get("layout"))
     _write(SITE, cur)
     return cur
+
+
+def _normalize_layout(incoming: dict[str, Any], prev: Any) -> dict[str, Any]:
+    base = {
+        "slotOrder": [],
+        "hiddenSlots": [],
+        "hiddenBlocks": [],
+    }
+    if isinstance(prev, dict):
+        base.update({k: prev[k] for k in base if k in prev})
+    order = incoming.get("slotOrder", base["slotOrder"])
+    hidden = incoming.get("hiddenSlots", base["hiddenSlots"])
+    blocks = incoming.get("hiddenBlocks", base["hiddenBlocks"])
+    def ids(val: Any) -> list[str]:
+        if not isinstance(val, list):
+            return []
+        out: list[str] = []
+        for x in val:
+            s = str(x).strip()
+            if s and s not in out:
+                out.append(s)
+        return out
+    return {
+        "slotOrder": [str(x).zfill(3) if str(x).isdigit() else str(x) for x in ids(order)],
+        "hiddenSlots": [str(x).zfill(3) if str(x).isdigit() else str(x) for x in ids(hidden)],
+        "hiddenBlocks": ids(blocks),
+    }
+
+
+def site_layout() -> dict[str, Any]:
+    lay = site().get("layout")
+    return _normalize_layout(lay if isinstance(lay, dict) else {}, None)
 
 
 def catalog_raw() -> dict[str, Any]:
@@ -632,3 +690,252 @@ def register_drop(code: str, day: str, name: str = "", title: str = "") -> dict[
             hit["title"] = title or name
     _write(CATALOG, raw)
     return {"ok": True, "code": code, "date": day, "characterId": cid}
+
+
+def _write_card_date(code: str, day: str) -> None:
+    folder = card_dir(code)
+    mp = folder / "meta.json"
+    if not mp.is_file():
+        return
+    try:
+        meta = json.loads(mp.read_text(encoding="utf-8"))
+    except Exception:
+        meta = {}
+    if not isinstance(meta, dict):
+        meta = {}
+    meta["date"] = day
+    mp.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _touch_character_card(raw: dict[str, Any], code: str, day: str | None, title: str = "") -> None:
+    m = FOLDER_RE.match(code)
+    if not m:
+        return
+    cid = m.group(2).zfill(3)
+    n = int(m.group(3) or 1)
+    chars = raw.setdefault("characters", [])
+    ch = next((c for c in chars if str(c.get("id") or "").zfill(3) == cid), None)
+    if not ch:
+        ch = {"id": cid, "name": title or "", "cards": []}
+        chars.append(ch)
+    cards = ch.setdefault("cards", [])
+    hit = next((c for c in cards if c.get("code") == code), None)
+    if not hit:
+        hit = {"n": n, "code": code, "date": day or "", "title": title or code}
+        cards.append(hit)
+    if day is not None:
+        hit["date"] = day
+    if title:
+        hit["title"] = title
+
+
+def holders_of(code: str) -> list[dict[str, Any]]:
+    """Who already has this code in inventory."""
+    out: list[dict[str, Any]] = []
+    all_u = users()
+    for pid, days in inventory().items():
+        for day, grants in (days or {}).items():
+            for g in as_grant_list(grants):
+                if g.get("code") != code:
+                    continue
+                u = all_u.get(pid) or {}
+                out.append(
+                    {
+                        "pid": pid,
+                        "name": u.get("name") or pid,
+                        "day": g.get("day") or day,
+                        "variant": g.get("variant"),
+                        "tier": g.get("tier"),
+                    }
+                )
+    return out
+
+
+def recall_code(code: str) -> int:
+    """Strip a card from every cabinet. Returns how many grants removed."""
+    inv = inventory()
+    n = 0
+    for pid, days in list(inv.items()):
+        nd: dict[str, list] = {}
+        for day, grants in (days or {}).items():
+            kept = [g for g in as_grant_list(grants) if g.get("code") != code]
+            n += len(as_grant_list(grants)) - len(kept)
+            if kept:
+                nd[str(day)] = kept
+        inv[pid] = nd
+    save_inventory(inv)
+    covers_all = covers()
+    dirty = False
+    for pid, cmap in list(covers_all.items()):
+        if not isinstance(cmap, dict):
+            continue
+        nxt = {k: v for k, v in cmap.items() if v != code}
+        if nxt != cmap:
+            covers_all[pid] = nxt
+            dirty = True
+    if dirty:
+        save_covers(covers_all)
+    return n
+
+
+def _grant_to_holders(code: str, holders: list[dict[str, Any]]) -> int:
+    card = find_card(code)
+    if not card:
+        return 0
+    inv = inventory()
+    n = 0
+    for h in holders:
+        pid = h.get("pid")
+        if not pid:
+            continue
+        mine = {d: as_grant_list(r) for d, r in (inv.get(pid) or {}).items()}
+        if code in _owned_codes(mine):
+            continue
+        rec = {
+            "code": code,
+            "variant": h.get("variant") or "gold",
+            "characterId": card["characterId"],
+            "day": h.get("day") or today_str(),
+            "tier": h.get("tier"),
+            "source": "drop-fix",
+        }
+        _append_grant(mine, rec)
+        inv[pid] = mine
+        n += 1
+    save_inventory(inv)
+    return n
+
+
+def drop_impact(code: str) -> dict[str, Any]:
+    holders = holders_of(code)
+    days: list[str] = []
+    cat = catalog()
+    for day, codes in (cat.get("_drops") or {}).items():
+        if code in codes:
+            days.append(day)
+    return {
+        "code": code,
+        "days": days,
+        "holders": holders,
+        "count": len(holders),
+        "card": find_card(code),
+    }
+
+
+def fix_drop(
+    *,
+    action: str,
+    code: str,
+    day: str = "",
+    new_code: str = "",
+    new_day: str = "",
+    inventory_mode: str = "keep",
+) -> dict[str, Any]:
+    """
+    Fix a mistaken drop.
+
+    action:
+      reassign  replace code with new_code on that day
+      move      move this code to new_day
+      remove    take this code off the drop list
+    inventory_mode:
+      keep     only change the schedule; cabinets stay as they are
+      recall   pull this code out of every cabinet
+      swap     recall the old code and give new_code to the same people (reassign only)
+    """
+    code = (code or "").strip()
+    if not FOLDER_RE.match(code):
+        raise ValueError("编号必须是 S1-001-1 这种")
+    action = (action or "").strip()
+    inventory_mode = (inventory_mode or "keep").strip()
+    if action not in {"reassign", "move", "remove"}:
+        raise ValueError("action 只能是 reassign / move / remove")
+    if inventory_mode not in {"keep", "recall", "swap"}:
+        raise ValueError("库存处理只能是 keep / recall / swap")
+    if action == "reassign" and not FOLDER_RE.match((new_code or "").strip()):
+        raise ValueError("请填写正确的新编号")
+    if action == "move" and not (new_day or "").strip():
+        raise ValueError("请填写新的投放日")
+
+    raw = catalog_raw()
+    drops = raw.setdefault("drops", {})
+    day_s = (day or "").strip()
+    holders = holders_of(code)
+    recalled = 0
+    granted = 0
+
+    if action == "remove":
+        if day_s:
+            lst = [c for c in as_code_list(drops.get(day_s)) if c != code]
+            if lst:
+                drops[day_s] = lst
+            else:
+                drops.pop(day_s, None)
+        else:
+            for d, val in list(drops.items()):
+                lst = [c for c in as_code_list(val) if c != code]
+                if lst:
+                    drops[d] = lst
+                else:
+                    drops.pop(d, None)
+        _touch_character_card(raw, code, "")
+        _write_card_date(code, "")
+        if inventory_mode in {"recall", "swap"}:
+            recalled = recall_code(code)
+
+    elif action == "move":
+        target = new_day.strip()
+        src_days = [day_s] if day_s else [d for d, val in drops.items() if code in as_code_list(val)]
+        for d in src_days:
+            lst = [c for c in as_code_list(drops.get(d)) if c != code]
+            if lst:
+                drops[d] = lst
+            else:
+                drops.pop(d, None)
+        bucket = as_code_list(drops.get(target))
+        if code not in bucket:
+            bucket.append(code)
+        drops[target] = bucket
+        _touch_character_card(raw, code, target)
+        _write_card_date(code, target)
+        if inventory_mode == "recall":
+            recalled = recall_code(code)
+
+    elif action == "reassign":
+        nxt = new_code.strip()
+        m = FOLDER_RE.match(nxt)
+        nxt = f"{m.group(1).upper()}-{m.group(2).zfill(3)}-{int(m.group(3) or 1)}"
+        src_days = [day_s] if day_s else [d for d, val in drops.items() if code in as_code_list(val)]
+        if not src_days:
+            src_days = [today_str()]
+        for d in src_days:
+            lst = [nxt if c == code else c for c in as_code_list(drops.get(d))]
+            if nxt not in lst:
+                lst.append(nxt)
+            lst = [c for c in lst if c != code]
+            drops[d] = lst
+        last_day = src_days[-1]
+        _touch_character_card(raw, code, "")
+        _write_card_date(code, "")
+        _touch_character_card(raw, nxt, last_day)
+        _write_card_date(nxt, last_day)
+        if inventory_mode == "recall":
+            recalled = recall_code(code)
+        elif inventory_mode == "swap":
+            recalled = recall_code(code)
+            granted = _grant_to_holders(nxt, holders)
+
+    raw["drops"] = drops
+    _write(CATALOG, raw)
+    return {
+        "ok": True,
+        "action": action,
+        "code": code,
+        "newCode": (new_code or "").strip(),
+        "newDay": (new_day or "").strip(),
+        "inventory": inventory_mode,
+        "holdersBefore": len(holders),
+        "recalled": recalled,
+        "granted": granted,
+        "drops": catalog().get("_drops") or {},
+    }

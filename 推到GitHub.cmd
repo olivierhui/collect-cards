@@ -2,33 +2,31 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 
-git init
-git branch -M main
 git config user.email "olivierhui@users.noreply.github.com"
 git config user.name "olivierhui"
 
-git remote remove origin 2>nul
-git remote add origin https://github.com/olivierhui/collect-cards.git
+git add backend/main.py backend/store.py backend/github_sync.py backend/patreon.py
+git add frontend/index.html frontend/app.js frontend/editor.js frontend/styles.css frontend/admin.html frontend/admin.js frontend/card.js
+git add README.md 项目进度.md Procfile requirements.txt runtime.txt start.cmd
+git add data/catalog.json data/site.json data/catalog.example.json
+git add -u
 
-git add .
 git status
-git commit -m "Initial cabinet: FastAPI + frontend auto-grant"
+git commit -m "On-page visual editor, drop-fix, slot reorder"
 if errorlevel 1 (
-  echo Commit failed.
-  pause
-  exit /b 1
+  echo Nothing to commit or commit failed.
 )
 
-git push -u origin main
+git push origin main
 if errorlevel 1 (
   echo.
-  echo Push failed. If GitHub asks you to log in, finish that, then run this file again.
+  echo Push failed. Check GitHub login, then run this file again.
+  echo Render will auto-deploy after a successful push.
   pause
   exit /b 1
 )
 
 echo.
-echo Done. Open https://github.com/olivierhui/collect-cards
-echo If you see backend/main.py, go back to Render and click Deploy.
+echo Pushed to https://github.com/olivierhui/collect-cards
+echo Wait 1-3 minutes, then open https://collect-cards.onrender.com/
 pause
-

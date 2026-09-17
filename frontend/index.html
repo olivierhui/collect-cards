@@ -6,7 +6,7 @@
   <title>收集卡系列 · 展示柜</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+SC:wght@500;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=auto-cabinet" />
+  <link rel="stylesheet" href="/static/styles.css?v=live-editor" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute;overflow:hidden">
@@ -42,11 +42,65 @@
     <div class="top-actions" id="top-actions"></div>
   </header>
 
-  <section class="status-bar" id="status-bar"></section>
-  <section class="gate" id="gate">
+  <section class="status-bar" id="status-bar" data-block="status"></section>
+  <section class="gate" id="gate" data-block="gate">
     <p>登录后打开你的个人典藏柜。当天仍在订的会员，卡会自动入柜。</p>
   </section>
-  <main class="cabinet hidden" id="cabinet"></main>
+  <section class="page-note hidden" id="page-note" data-block="note">
+    <p id="ed-note"></p>
+  </section>
+  <main class="cabinet hidden" id="cabinet" data-block="cabinet"></main>
+
+  <button type="button" class="ed-enter hidden" id="ed-enter">编辑页面</button>
+  <div class="ed-bar hidden" id="ed-bar">
+    <strong>页面编辑</strong>
+    <span class="ed-dirty" id="ed-dirty" hidden>未保存</span>
+    <button type="button" id="ed-open-lib">卡片库</button>
+    <button type="button" id="ed-bar-fix">投放纠错</button>
+    <button type="button" data-hide-block="status">显隐状态栏</button>
+    <button type="button" data-hide-block="note">显隐公告</button>
+    <button type="button" class="primary" id="ed-save">保存</button>
+    <button type="button" id="ed-quit">退出编辑</button>
+    <span class="muted tiny" id="ed-status"></span>
+  </div>
+  <aside class="ed-drawer hidden" id="ed-drawer"></aside>
+  <aside class="ed-lib hidden" id="ed-lib">
+    <header>
+      <h3>卡片库</h3>
+      <p class="muted tiny">拖到格子上投放，或点开纠错。</p>
+    </header>
+    <input id="ed-lib-q" placeholder="搜编号或名字" />
+    <div id="ed-lib-list"></div>
+  </aside>
+  <div class="ed-fix hidden" id="ed-fix">
+    <div class="ed-fix-card">
+      <header>
+        <h3>投放纠错</h3>
+        <button type="button" id="ed-fix-close">关闭</button>
+      </header>
+      <p class="muted tiny" id="ed-fix-msg">投放错了：改编号、改日期、或撤销。已入柜的可以只改名单，或从所有人柜里收回。</p>
+      <label>现在的编号 <input id="ed-fix-code" placeholder="S1-001-1" /></label>
+      <label>原投放日 <input id="ed-fix-day" type="date" /></label>
+      <label>动作
+        <select id="ed-fix-action">
+          <option value="remove">撤销投放</option>
+          <option value="reassign">改成另一张（改编号）</option>
+          <option value="move">改投放日期</option>
+        </select>
+      </label>
+      <label>新编号（改编号时填） <input id="ed-fix-newcode" placeholder="S1-002-1" /></label>
+      <label>新日期（改日期时填） <input id="ed-fix-newday" type="date" /></label>
+      <label>已经拿到的人
+        <select id="ed-fix-inv">
+          <option value="keep">只改名单，柜里先留着</option>
+          <option value="recall">从所有人柜里收回这张</option>
+          <option value="swap">收回旧的，给同批人补上新编号</option>
+        </select>
+      </label>
+      <p class="muted tiny" id="ed-fix-impact"></p>
+      <button type="button" class="primary" id="ed-fix-go">执行</button>
+    </div>
+  </div>
 
   <div class="overlay hidden" id="overlay">
     <div class="viewer">
@@ -67,6 +121,7 @@
   </div>
 
   <script src="/static/card.js?v=studio-preview"></script>
-  <script src="/static/app.js?v=admin-site"></script>
+  <script src="/static/app.js?v=live-editor"></script>
+  <script src="/static/editor.js?v=1"></script>
 </body>
 </html>
