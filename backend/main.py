@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import json
 import os
 import secrets
+import shutil
+import tempfile
+import zipfile
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
+from . import github_sync
 from . import patreon
 from . import store
 
@@ -36,6 +41,15 @@ def current_user(request: Request) -> dict | None:
     return store.users().get(pid)
 
 
+def require_creator(request: Request) -> dict:
+    user = current_user(request)
+    if not user:
+        raise HTTPException(401, "请先登录")
+    if user.get("creator") or str(user.get("id") or "").startswith("mock-"):
+        return user
+    raise HTTPException(403, "只有创作者能进后台")
+
+
 def login_and_grant(
     request: Request, pid: str, name: str, tier: str | None, creator: bool = False
 ) -> None:
@@ -47,6 +61,16 @@ def login_and_grant(
 @app.get("/")
 async def index():
     return FileResponse(FRONTEND / "index.html")
+
+
+@app.get("/admin")
+async def admin_page():
+    return FileResponse(FRONTEND / "admin.html")
+
+
+@app.get("/api/site")
+async def api_site():
+    return {"ok": True, "site": store.site(), "today": store.today_str()}
 
 
 @app.get("/api/health")
@@ -72,7 +96,9 @@ async def me(request: Request):
         "today": store.today_str(),
         "todayDrops": store.drops_for_date(store.today_str()),
         "patreonReady": patreon.configured(),
-        "subscribeUrl": os.getenv("PATREON_PAGE_URL") or "https://www.patreon.com/18animegirls",
+        "subscribeUrl": store.site().get("subscribeUrl") or os.getenv("PATREON_PAGE_URL") or "https://www.patreon.com/18animegirls",
+        "subscribeLabel": store.site().get("subscribeLabel") or "去 Patreon 订阅",
+        "site": store.site(),
     }
 
 
@@ -180,6 +206,95 @@ async def api_card(code: str, request: Request):
         "meta": meta,
         "canSeeBack": True,
     }
+
+
+@app.get("/api/admin/state")
+async def admin_state(request: Request):
+    require_creator(request)
+    cat = store.catalog()
+    drops = {day: list(codes) for day, codes in (cat.get("_drops") or {}).items()}
+    chars = [{"id": ch.get("id"), "name": ch.get("name") or "", "cards": ch.get("cards") or []} for ch in (cat.get("characters") or [])]
+    return {
+        "ok": True,
+        "today": store.today_str(),
+        "site": store.site(),
+        "seasonTitle": cat.get("seasonTitle") or "",
+        "slots": int(cat.get("slots") or 24),
+        "drops": drops,
+        "characters": chars,
+        "codes": store.list_card_codes(),
+        "github": github_sync.enabled(),
+    }
+
+
+@app.post("/api/admin/save")
+async def admin_save(request: Request):
+    require_creator(request)
+    body = await request.json()
+    site = store.save_site(body.get("site") or {})
+    cat = store.save_admin_catalog(body)
+    gh = await github_sync.push_data_files("admin: update cabinet site")
+    live = store.catalog()
+    return {
+        "ok": True,
+        "site": site,
+        "seasonTitle": cat.get("seasonTitle") or "",
+        "slots": int(cat.get("slots") or 24),
+        "drops": live.get("_drops") or {},
+        "characters": live.get("characters") or [],
+        "today": store.today_str(),
+        "github": gh,
+    }
+
+
+@app.post("/api/admin/card-zip")
+async def admin_card_zip(
+    request: Request,
+    file: UploadFile = File(...),
+    date: str = Form(""),
+):
+    require_creator(request)
+    day = (date or "").strip() or store.today_str()
+    suffix = Path(file.filename or "card.zip").suffix.lower()
+    if suffix != ".zip":
+        raise HTTPException(400, "请上传 ZIP")
+    root_tmp = Path(tempfile.mkdtemp(prefix="cardzip-"))
+    try:
+        raw = await file.read()
+        zpath = root_tmp / "card.zip"
+        zpath.write_bytes(raw)
+        with zipfile.ZipFile(zpath) as zf:
+            zf.extractall(root_tmp)
+        folder = root_tmp
+        if not (folder / "meta.json").is_file():
+            found = next(root_tmp.rglob("meta.json"), None)
+            if found:
+                folder = found.parent
+        meta_path = folder / "meta.json"
+        meta = {}
+        if meta_path.is_file():
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        serial = str(meta.get("serial") or Path(file.filename or "").stem)
+        m = store.FOLDER_RE.match(serial.strip())
+        if not m:
+            raise HTTPException(400, "ZIP 里 meta.json 的 serial 要写成 S1-001-1")
+        code = f"{m.group(1).upper()}-{m.group(2).zfill(3)}-{int(m.group(3) or 1)}"
+        dest = store.CARDS / code
+        dest.mkdir(parents=True, exist_ok=True)
+        for name in ("original.png", "background.png", "subject.png", "meta.json"):
+            src = folder / name
+            if src.is_file():
+                shutil.copy2(src, dest / name)
+        for src in folder.glob("extra_*.png"):
+            shutil.copy2(src, dest / src.name)
+        meta["serial"] = code
+        meta["date"] = day
+        (dest / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        store.register_drop(code, day, meta.get("name") or "", meta.get("name") or "")
+        await github_sync.push_data_files(f"admin: add card {code}")
+        return {"ok": True, "code": code, "date": day}
+    finally:
+        shutil.rmtree(root_tmp, ignore_errors=True)
 
 
 @app.get("/api/assets/{code}/{filename}")

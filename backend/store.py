@@ -31,6 +31,16 @@ INVENTORY = DATA / "inventory.json"
 CLAIMS_LEGACY = DATA / "claims.json"
 CATALOG = DATA / "catalog.json"
 COVERS = DATA / "covers.json"
+SITE = DATA / "site.json"
+
+SITE_DEFAULT = {
+    "kicker": "18ANIME GIRLS",
+    "title": "个人典藏柜",
+    "gate": "登录后打开你的个人典藏柜。当天仍在订的会员，卡会自动入柜。",
+    "subscribeUrl": "https://www.patreon.com/18animegirls",
+    "subscribeLabel": "去 Patreon 订阅",
+    "pageTitle": "收集卡系列 · 展示柜",
+}
 
 DATA.mkdir(parents=True, exist_ok=True)
 CARDS.mkdir(parents=True, exist_ok=True)
@@ -527,6 +537,68 @@ def card_files(code: str) -> dict[str, str]:
         out[p.name] = str(p)
         i += 1
     return out
+
+
+def site() -> dict[str, Any]:
+    raw = _read(SITE, {})
+    out = dict(SITE_DEFAULT)
+    if isinstance(raw, dict):
+        for key, val in raw.items():
+            if val is None or val == "":
+                continue
+            out[key] = val
+    return out
+
+
+def save_site(payload: dict[str, Any]) -> dict[str, Any]:
+    cur = site()
+    for key in SITE_DEFAULT:
+        if key in payload and payload[key] is not None:
+            cur[key] = str(payload[key]).strip()
+    _write(SITE, cur)
+    return cur
+
+
+def catalog_raw() -> dict[str, Any]:
+    return _read(CATALOG, {"season": "S1", "slots": 24, "drops": {}, "characters": [], "tiers": {}})
+
+
+def save_admin_catalog(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = catalog_raw()
+    if "seasonTitle" in payload and payload["seasonTitle"] is not None:
+        raw["seasonTitle"] = str(payload["seasonTitle"]).strip()
+    if "slots" in payload and payload["slots"] is not None:
+        try:
+            raw["slots"] = max(1, min(100, int(payload["slots"])))
+        except (TypeError, ValueError):
+            pass
+    if "drops" in payload and isinstance(payload["drops"], dict):
+        drops: dict[str, list[str]] = {}
+        for day, codes in payload["drops"].items():
+            day_s = str(day).strip()
+            if not day_s:
+                continue
+            lst = as_code_list(codes)
+            if lst:
+                drops[day_s] = lst
+        raw["drops"] = drops
+    if "characters" in payload and isinstance(payload["characters"], list):
+        by_id = {str(ch.get("id") or "").zfill(3): ch for ch in (raw.get("characters") or [])}
+        for row in payload["characters"]:
+            if not isinstance(row, dict):
+                continue
+            cid = str(row.get("id") or "").zfill(3)
+            if cid not in by_id:
+                by_id[cid] = {"id": cid, "name": "", "cards": []}
+            if "name" in row and row["name"] is not None:
+                by_id[cid]["name"] = str(row["name"]).strip()
+        raw["characters"] = sorted(by_id.values(), key=lambda c: c.get("id") or "")
+    _write(CATALOG, raw)
+    return raw
+
+
+def list_card_codes() -> list[str]:
+    return [item["code"] for item in scan_disk_cards()]
 
 
 def register_drop(code: str, day: str, name: str = "", title: str = "") -> dict[str, Any]:

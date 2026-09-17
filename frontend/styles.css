@@ -297,3 +297,52 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
   .top { padding: 18px 16px; }
   .cabinet, .status-bar, .gate { padding-left: 16px; padding-right: 16px; }
 }
+
+.admin-body { padding-bottom: 96px; }
+.admin-note { padding: 0 32px 8px; color: var(--muted); }
+.admin-card {
+  margin: 12px 32px;
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.admin-card h2 { font-family: "Noto Serif SC", serif; font-size: 18px; margin: 0 0 12px; }
+.admin-card label { display: block; margin: 10px 0; color: var(--muted); font-size: 13px; }
+.admin-card input, .admin-card textarea {
+  display: block; width: 100%; margin-top: 6px;
+  background: #100e0c; color: var(--text); border: 1px solid #3a342c;
+  border-radius: 10px; padding: 8px 10px; font: inherit;
+}
+.admin-row { display: grid; grid-template-columns: 160px 1fr auto; gap: 8px; margin: 8px 0; }
+.admin-save {
+  position: sticky; bottom: 0;
+  display: flex; gap: 12px; align-items: center;
+  padding: 12px 32px 20px;
+  background: linear-gradient(180deg, transparent, var(--bg) 30%);
+}
+
+.admin-body { padding-bottom: 96px; }
+.admin-note { padding: 0 32px 8px; color: var(--muted); }
+.admin-card {
+  margin: 12px 32px;
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.admin-card h2 { font-family: "Noto Serif SC", serif; font-size: 18px; margin: 0 0 12px; }
+.admin-card label { display: block; margin: 10px 0; color: var(--muted); font-size: 13px; }
+.admin-card input, .admin-card textarea {
+  display: block; width: 100%; margin-top: 6px;
+  background: #100e0c; color: var(--text); border: 1px solid #3a342c;
+  border-radius: 10px; padding: 8px 10px; font: inherit;
+}
+.admin-row { display: grid; grid-template-columns: 160px 1fr auto; gap: 8px; margin: 8px 0; }
+.admin-save {
+  position: sticky; bottom: 0;
+  display: flex; gap: 12px; align-items: center;
+  padding: 12px 32px 20px;
+  background: linear-gradient(180deg, transparent, var(--bg) 30%);
+}
+}

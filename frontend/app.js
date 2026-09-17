@@ -35,8 +35,10 @@
          <a class="btn" href="/auth/mock?tier=t5">模拟 T5</a>
          <a class="btn" href="/auth/mock?tier=none">模拟未订</a>`
       : "";
+    const adminLink = me.user.creator || me.user.mock ? `<a class="btn" href="/admin">后台</a>` : "";
     box.innerHTML = `
       <span class="muted">${me.user.name}</span>
+      ${adminLink}
       ${mockSwitch}
       <button type="button" id="logout">退出</button>`;
     $("#logout").onclick = async () => {
@@ -53,8 +55,9 @@
     }
     if (!me.user.paid) {
       const sub = me.subscribeUrl || "https://www.patreon.com/18animegirls";
+      const lab = me.subscribeLabel || "去 Patreon 订阅";
       bar.innerHTML = `<p class="muted">现在不会发新卡。柜子里已有的还在。</p>
-        <a class="btn primary" href="${sub}">去 Patreon 订阅</a>`;
+        <a class="btn primary" href="${sub}">${lab}</a>`;
       return;
     }
     const n = (me.todayDrops || []).length;
@@ -189,8 +192,20 @@
     viewer = null;
   };
 
+  function applySite(site) {
+    if (!site) return;
+    if (site.pageTitle) document.title = site.pageTitle;
+    const kicker = document.querySelector(".kicker");
+    const title = document.querySelector(".top h1");
+    const gate = document.querySelector("#gate p");
+    if (kicker && site.kicker) kicker.textContent = site.kicker;
+    if (title && site.title) title.textContent = site.title;
+    if (gate && site.gate) gate.textContent = site.gate;
+  }
+
   async function boot() {
     me = await api("/api/me");
+    applySite(me.site);
     renderTop();
     renderStatus();
     if (me.user) {

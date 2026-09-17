@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>柜子后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css?v=admin" />
+</head>
+<body class="admin-body">
+  <header class="top">
+    <div>
+      <p class="kicker">CREATOR</p>
+      <h1>柜子后台</h1>
+    </div>
+    <div class="top-actions">
+      <a class="btn" href="/">看网站</a>
+      <button type="button" id="logout">退出</button>
+    </div>
+  </header>
+  <p class="admin-note" id="note">改完点保存。网站立刻变。有 GitHub 钥匙时还会备份到仓库。</p>
+
+  <section class="admin-card">
+    <h2>网站文字</h2>
+    <label>页眉小字 <input id="kicker" /></label>
+    <label>大标题 <input id="title" /></label>
+    <label>未登录说明 <textarea id="gate" rows="3"></textarea></label>
+    <label>订阅按钮文字 <input id="subscribeLabel" /></label>
+    <label>订阅链接 <input id="subscribeUrl" /></label>
+    <label>浏览器标题 <input id="pageTitle" /></label>
+    <label>季名 <input id="seasonTitle" /></label>
+    <label>格子数 <input id="slots" type="number" min="1" max="100" /></label>
+  </section>
+
+  <section class="admin-card">
+    <h2>当天投放</h2>
+    <p class="muted tiny">一行一天。编号用逗号分开，例如 S1-001-1, S1-002-1</p>
+    <div id="drops"></div>
+    <button type="button" id="add-drop">加一天</button>
+  </section>
+
+  <section class="admin-card">
+    <h2>角色名</h2>
+    <div id="chars"></div>
+  </section>
+
+  <section class="admin-card">
+    <h2>上传一张卡</h2>
+    <p class="muted tiny">工作室导出的 ZIP。编号必须是 S1-001-1 这种。</p>
+    <label>投放日 <input id="zip-date" type="date" /></label>
+    <input id="zip-file" type="file" accept=".zip" />
+    <button type="button" id="upload">上传并放入当天名单</button>
+  </section>
+
+  <div class="admin-save">
+    <button type="button" class="primary" id="save">保存，更新网站</button>
+    <span class="muted" id="status"></span>
+  </div>
+  <script src="/static/admin.js?v=1"></script>
+</body>
+</html>
