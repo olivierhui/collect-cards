@@ -41,8 +41,15 @@
     },
     {
       "id": "002",
-      "name": "",
-      "cards": []
+      "name": "Yuki Suou",
+      "cards": [
+        {
+          "n": 1,
+          "code": "S1-002-1",
+          "date": "2026-09-19",
+          "title": "Yuki Suou"
+        }
+      ]
     },
     {
       "id": "003",
