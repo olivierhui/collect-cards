@@ -18,7 +18,24 @@
       "back": true
     }
   },
-  "drops": {},
-  "characters": [],
+  "drops": {
+    "2026-09-19": [
+      "S1-001-1"
+    ]
+  },
+  "characters": [
+    {
+      "id": "001",
+      "name": "Alisa Mikhailovna Kujou",
+      "cards": [
+        {
+          "n": 1,
+          "code": "S1-001-1",
+          "date": "2026-09-19",
+          "title": "Alisa Mikhailovna Kujou"
+        }
+      ]
+    }
+  ],
   "pending": []
 }

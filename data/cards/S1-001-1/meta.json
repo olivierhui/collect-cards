@@ -1,0 +1,42 @@
+{
+  "width": 3136,
+  "height": 4032,
+  "ratio": "7:9",
+  "engine": "birefnet-general",
+  "notes": [
+    "主体由 rembg/birefnet-general 抠出。"
+  ],
+  "extras": [],
+  "name": "Alisa Mikhailovna Kujou",
+  "brand": "18animegirls",
+  "serial": "S1-001-1",
+  "date": "2026-09-19",
+  "edition": "",
+  "grade": "prism",
+  "eyes": [],
+  "chest": [
+    {
+      "x": 0.2538261153073895,
+      "y": 0.4148414286526299,
+      "r": 0.10784640641546558
+    },
+    {
+      "x": 0.44322330082696043,
+      "y": 0.4656133535165589,
+      "r": 0.10784640641546558
+    }
+  ],
+  "depth": 29,
+  "glow": 45,
+  "foil": 58,
+  "foilStyle": "gold",
+  "foilTarget": "bg",
+  "tilt": false,
+  "float": true,
+  "gaze": false,
+  "serialUrl": "",
+  "backKicker": "个人典藏",
+  "backMark": "S",
+  "backBrand": "18 ANIME GIRLS",
+  "backSub": ""
+}
