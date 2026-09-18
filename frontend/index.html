@@ -6,7 +6,7 @@
   <title>收集卡系列 · 展示柜</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+SC:wght@500;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=cabinet12" />
+  <link rel="stylesheet" href="/static/styles.css?v=mem" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute;overflow:hidden">
@@ -50,6 +50,10 @@
     <p id="ed-note"></p>
   </section>
   <main class="cabinet hidden" id="cabinet" data-block="cabinet"></main>
+  <section class="memorial-wrap hidden" id="memorial-wrap" data-block="memorial">
+    <h2 class="mem-title" id="mem-title">纪念组</h2>
+    <div class="cabinet mem-grid" id="memorial"></div>
+  </section>
 
   <button type="button" class="ed-enter hidden" id="ed-enter">编辑页面</button>
   <div class="ed-bar hidden" id="ed-bar">
@@ -59,6 +63,8 @@
     <button type="button" id="ed-bar-fix">投放纠错</button>
     <button type="button" data-hide-block="status">显隐状态栏</button>
     <button type="button" data-hide-block="note">显隐公告</button>
+    <button type="button" data-hide-block="memorial">显隐纪念组</button>
+    <button type="button" id="ed-mods">属性模块</button>
     <button type="button" class="primary" id="ed-save">保存</button>
     <button type="button" id="ed-quit">退出编辑</button>
     <span class="muted tiny" id="ed-status"></span>
@@ -106,28 +112,28 @@
     <div class="float-stage" id="float-stage">
       <div class="viewer-strip" id="viewer-strip"></div>
       <div class="float-card" id="viewer-stage"></div>
-      <button type="button" class="cover-fab" id="btn-cover">设为封面</button>
+      <button type="button" class="cover-fab" id="btn-cover" data-mod="propCover">设为封面</button>
     </div>
     <button type="button" class="ov-chip" id="btn-hide-info">属性</button>
     <button type="button" class="ov-chip ov-close" id="close-viewer">关闭</button>
     <aside class="prop-sheet" id="viewer-side">
-      <header class="prop-head">
+      <header class="prop-head" data-mod="propTitle">
         <h2 id="viewer-title"></h2>
         <button type="button" class="prop-x" id="btn-hide-info-x" aria-label="收起属性">收起</button>
       </header>
-      <p class="muted" id="viewer-code"></p>
-      <a class="prop-link hidden" id="prop-collection" href="#" target="_blank" rel="noopener noreferrer">Patreon 集合</a>
-      <div class="prop-tools">
+      <p class="muted" id="viewer-code" data-mod="propCode"></p>
+      <a class="prop-link hidden" id="prop-collection" href="#" target="_blank" rel="noopener noreferrer" data-mod="propCollection">Patreon 集合</a>
+      <div class="prop-tools" data-mod="propWallpaper">
         <button type="button" id="btn-phone">手机壁纸</button>
         <button type="button" id="btn-desk">电脑壁纸</button>
       </div>
-      <p class="muted tiny" id="viewer-hint">滚轮缩放 · 右键返回</p>
+      <p class="muted tiny" id="viewer-hint" data-mod="propHint">滚轮缩放 · 右键返回</p>
     </aside>
   </div>
 
   <script src="/static/i18n.js?v=1"></script>
   <script src="/static/card.js?v=back-text"></script>
-  <script src="/static/app.js?v=cabinet12"></script>
-  <script src="/static/editor.js?v=1"></script>
+  <script src="/static/app.js?v=mem"></script>
+  <script src="/static/editor.js?v=mem"></script>
 </body>
 </html>

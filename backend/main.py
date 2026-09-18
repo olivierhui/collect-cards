@@ -193,6 +193,12 @@ async def api_card(code: str, request: Request):
         raise HTTPException(401, "请先登录")
     owned = store.owned_cards(user["id"])
     hit = next((c for c in owned if c["code"] == code), None)
+    if not hit and code in store.memorial_codes():
+        card = store.find_card(code)
+        if card:
+            hit = dict(card)
+            hit["variant"] = hit.get("variant") or "gold"
+            hit["showcase"] = True
     if not hit:
         raise HTTPException(403, "柜里没有这张卡")
     files = store.card_files(code)
@@ -443,7 +449,7 @@ async def api_asset(code: str, filename: str, request: Request):
     if not user:
         raise HTTPException(401)
     owned = store.owned_cards(user["id"])
-    if not any(c["code"] == code for c in owned):
+    if not any(c["code"] == code for c in owned) and code not in store.memorial_codes():
         raise HTTPException(403)
     safe = Path(filename).name
     path = store.card_dir(code) / safe

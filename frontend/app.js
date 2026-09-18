@@ -225,7 +225,62 @@
     } else if (window.CabinetEditor.bindSlots) {
       window.CabinetEditor.bindSlots();
     }
+    renderMemorial();
+    applyModules();
+  }
+
+  function renderMemorial() {
+    const wrap = $("#memorial-wrap");
+    const grid = $("#memorial");
+    const title = $("#mem-title");
+    const mem = cabinet && cabinet.memorial;
+    const editing = window.CabinetEditor && window.CabinetEditor.on;
+    const hiddenBlocks = new Set((me.site && me.site.layout && me.site.layout.hiddenBlocks) || []);
+    if (!wrap || !grid) return;
+    if (!me || !me.user || !mem) {
+      wrap.classList.add("hidden");
+      mountSlotLives();
+      return;
+    }
+    wrap.classList.toggle("hidden", !editing && hiddenBlocks.has("memorial"));
+    if (title) title.textContent = mem.title || "纪念组";
+    const slots = mem.slots || [];
+    grid.innerHTML = slots.map((s, i) => {
+      const cover = s.cover;
+      const v = cover ? cover.variant : "";
+      const img = cover && cover.code ? `/api/assets/${cover.code}/original.png` : "";
+      if (!cover) {
+        return `<article class="slot empty mem-slot" data-mem="${i}">
+          <div class="code">${s.slot}</div>
+          <div class="empty-label">${t("empty")}</div>
+        </article>`;
+      }
+      return `<article class="slot ${v} mem-slot" data-mem="${i}" data-cover="${cover.code}" data-cid="mem-${i}">
+        <div class="slot-live"></div>
+        <div class="slot-frame" aria-hidden="true"></div>
+        <img src="${img}" alt="">
+      </article>`;
+    }).join("");
+    if (!editing) {
+      grid.querySelectorAll(".slot:not(.empty)").forEach((el) => {
+        el.onclick = () => openMemorial(Number(el.dataset.mem));
+      });
+    } else if (window.CabinetEditor && window.CabinetEditor.bindMemorial) {
+      window.CabinetEditor.bindMemorial();
+    }
     mountSlotLives();
+  }
+
+  async function openMemorial(index) {
+    const s = (cabinet.memorial && cabinet.memorial.slots || [])[index];
+    if (!s || !s.cover) return;
+    view.cid = "mem-" + index;
+    view.cards = s.cards || [s.cover];
+    view.selected = s.cover;
+    $("#overlay").classList.remove("hidden");
+    applySimple();
+    await showCard(view.selected);
+    refreshViewerChrome();
   }
 
   function clearSlotViews() {
@@ -236,7 +291,7 @@
   function mountSlotLives() {
     clearSlotViews();
     if (window.CabinetEditor && window.CabinetEditor.on) return;
-    document.querySelectorAll(".slot[data-cover]").forEach((el) => {
+    document.querySelectorAll("#cabinet .slot[data-cover], #memorial .slot[data-cover]").forEach((el) => {
       const code = el.dataset.cover;
       const host = el.querySelector(".slot-live");
       if (!code || !host) return;
@@ -275,12 +330,16 @@
   }
 
   function refreshViewerChrome() {
-    const slot = cabinet.slots.find((s) => s.characterId === view.cid);
+    const slot = (cabinet.slots || []).find((s) => s.characterId === view.cid)
+      || ((cabinet.memorial && cabinet.memorial.slots) || []).find((_, i) => view.cid === "mem-" + i);
     $("#viewer-title").textContent = (slot && slot.name) || (view.selected && view.selected.code) || "";
     const fr = view.selected ? frameName(view.selected.variant) : "";
+    const mods = (me && me.site && me.site.layout && me.site.layout.modules) || {};
+    const dateBit = mods.cardDate ? ` · ${view.selected.claimedOn || view.selected.grantedOn || view.selected.date || ""}` : "";
     $("#viewer-code").textContent = view.selected
-      ? `${view.selected.code}${fr ? " · " + fr : ""} · ${view.selected.claimedOn || view.selected.grantedOn || ""}`
+      ? `${view.selected.code}${fr ? " · " + fr : ""}${dateBit}`
       : "";
+    applyModules();
     const strip = $("#viewer-strip");
     if (strip) {
       strip.innerHTML = view.cards.map((c) => {
@@ -317,6 +376,16 @@
   function applySimple() {
     $("#overlay").classList.toggle("viewer-simple", !!view.simple);
     localStorage.setItem("cc-simple", view.simple ? "1" : "0");
+  }
+
+  function applyModules() {
+    const mods = (me && me.site && me.site.layout && me.site.layout.modules) || {};
+    document.querySelectorAll("[data-mod]").forEach((el) => {
+      const on = mods[el.dataset.mod];
+      el.classList.toggle("mod-off", on === false);
+    });
+    document.body.classList.toggle("hide-face-toggle", mods.faceToggle === false);
+    document.body.classList.toggle("hide-owned-badge", mods.ownedBadge === false);
   }
 
   function applyZoom() {
@@ -470,6 +539,7 @@
       if (el.id === "cabinet") return;
       el.classList.toggle("ed-block-off", hidden.has(el.dataset.block));
     });
+    applyModules();
     if (kicker) kicker.classList.toggle("ed-block-off", hidden.has("kicker"));
     if (title) title.classList.toggle("ed-block-off", hidden.has("title"));
   }

@@ -179,7 +179,9 @@
     setTxt(".holo-type-brand", brand);
     setTxt(".holo-type-name", name);
     setTxt(".holo-type-edition", this.meta.edition || "");
-    setTxt(".holo-type-date", this.meta.date || "");
+    const mods = (window.__cabinet && window.__cabinet.me && window.__cabinet.me.site && window.__cabinet.me.site.layout && window.__cabinet.me.site.layout.modules) || {};
+    if (mods.cardDate) setTxt(".holo-type-date", this.meta.date || "");
+    else setTxt(".holo-type-date", "");
     setTxt(".holo-back-kicker", this.meta.backKicker || "个人典藏");
     setTxt(".holo-back-mono", this.meta.backMark || "18");
     setTxt(".holo-back-brand", this.meta.backBrand || "ANIME GIRLS");

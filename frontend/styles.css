@@ -90,7 +90,7 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
 .overlay {
   position: fixed; inset: 0; z-index: 20;
   display: grid; place-items: center;
-  background: rgba(10, 9, 8, .42);
+  background: rgba(8, 7, 6, .82);
   padding: 0;
 }
 .overlay.hidden { display: none; }
@@ -110,7 +110,28 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
   transform-origin: center center;
   filter: drop-shadow(0 32px 48px rgba(0,0,0,.5));
 }
-.float-card .holo-card-wrap { width: min(100%, 380px); }
+.float-card .holo-card-wrap { width: min(100%, 380px); position: relative; z-index: 5; }
+.overlay .holo-face-toggle {
+  position: relative;
+  z-index: 6;
+  margin-top: 10px;
+}
+body.hide-face-toggle .holo-face-toggle { display: none !important; }
+body.hide-owned-badge .slot .count { display: none !important; }
+.mod-off { display: none !important; }
+.mem-title {
+  font-family: "Noto Serif SC", serif;
+  font-size: 20px;
+  margin: 8px 32px 12px;
+  letter-spacing: 0.12em;
+}
+.memorial-wrap { padding-bottom: 24px; }
+.ed-mod-pop {
+  position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%);
+  z-index: 48; width: min(320px, 92vw);
+  background: #16141c; border: 1px solid #2e2a24; border-radius: 14px; padding: 14px;
+}
+.ed-mod-pop h4 { margin: 0 0 10px; font-family: "Noto Serif SC", serif; }
 .ov-chip {
   position: fixed; z-index: 22; top: 18px;
   background: rgba(22,20,18,.82); backdrop-filter: blur(12px);

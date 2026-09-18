@@ -30,6 +30,7 @@
       slotOrder: [...(lay.slotOrder || [])],
       hiddenSlots: [...(lay.hiddenSlots || [])],
       hiddenBlocks: [...(lay.hiddenBlocks || [])],
+      modules: Object.assign({}, (lay.modules || {})),
     };
   }
 
@@ -105,6 +106,11 @@
     site.layout = layout();
     const order = $$("#cabinet .slot").map((el) => el.dataset.cid).filter(Boolean);
     if (order.length) site.layout.slotOrder = order;
+    const mem = site.memorial || (window.__cabinet.cabinet && window.__cabinet.cabinet.memorial) || { title: "纪念组", slots: 5, codes: ["", "", "", "", ""] };
+    const codes = $$("#memorial .mem-slot").map((el) => el.dataset.cover || "");
+    if (codes.length) mem.codes = codes;
+    mem.title = ($("#mem-title")?.innerText || mem.title || "纪念组").trim();
+    site.memorial = mem;
     return site;
   }
 
@@ -385,6 +391,92 @@
     }
   }
 
+  function bindMemorial() {
+    $$("#memorial .mem-slot").forEach((el) => {
+      el.ondragover = (e) => { e.preventDefault(); el.classList.add("ed-drop"); };
+      el.ondragleave = () => el.classList.remove("ed-drop");
+      el.ondrop = (e) => {
+        e.preventDefault();
+        el.classList.remove("ed-drop");
+        const code = e.dataTransfer.getData("text/card-code");
+        if (!code) return;
+        const i = Number(el.dataset.mem);
+        const site = window.__cabinet.me.site || (window.__cabinet.me.site = {});
+        const mem = site.memorial || { title: "纪念组", slots: 5, codes: ["", "", "", "", ""] };
+        while (mem.codes.length < 5) mem.codes.push("");
+        mem.codes[i] = code;
+        site.memorial = mem;
+        markDirty();
+        window.__cabinet.renderCabinet();
+      };
+      el.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!el.dataset.cover) return;
+        if (!confirm("从纪念组拿掉这张？")) return;
+        const i = Number(el.dataset.mem);
+        const site = window.__cabinet.me.site || (window.__cabinet.me.site = {});
+        const mem = site.memorial || { codes: [] };
+        if (mem.codes) mem.codes[i] = "";
+        site.memorial = mem;
+        markDirty();
+        window.__cabinet.renderCabinet();
+      };
+    });
+    const title = $("#mem-title");
+    if (title) {
+      title.contentEditable = "true";
+      title.oninput = () => {
+        const site = window.__cabinet.me.site || (window.__cabinet.me.site = {});
+        site.memorial = site.memorial || {};
+        site.memorial.title = title.innerText.trim();
+        markDirty();
+      };
+    }
+  }
+
+  const MOD_LABELS = {
+    propTitle: "属性标题",
+    propCode: "属性编号",
+    propCollection: "集合链接",
+    propWallpaper: "壁纸按钮",
+    propHint: "操作提示",
+    propCover: "设为封面",
+    faceToggle: "正面/背面",
+    ownedBadge: "已有几张",
+    cardDate: "卡面日期",
+  };
+
+  function openMods() {
+    let box = $("#ed-mod-pop");
+    if (box) {
+      box.remove();
+      return;
+    }
+    const mods = layout().modules || {};
+    box = document.createElement("div");
+    box.id = "ed-mod-pop";
+    box.className = "ed-mod-pop";
+    const offByDefault = { cardDate: true };
+    box.innerHTML = `<h4>要留的模块</h4>` + Object.keys(MOD_LABELS).map((k) => {
+      const on = offByDefault[k] ? mods[k] === true : mods[k] !== false;
+      return `<label class="ed-check"><input type="checkbox" data-mod="${k}" ${on ? "checked" : ""}/> ${MOD_LABELS[k]}</label>`;
+    }).join("");
+    document.body.appendChild(box);
+    box.querySelectorAll("input").forEach((inp) => {
+      inp.onchange = () => {
+        const site = window.__cabinet.me.site || (window.__cabinet.me.site = {});
+        site.layout = layout();
+        site.layout.modules = site.layout.modules || {};
+        site.layout.modules[inp.dataset.mod] = inp.checked;
+        window.__cabinet.me.site.layout = site.layout;
+        markDirty();
+        window.__cabinet.renderCabinet();
+        if (window.__cabinet.applySite) window.__cabinet.applySite(site);
+      };
+    });
+  }
+
   function toggleBlock(id) {
     const site = window.__cabinet.me.site || (window.__cabinet.me.site = {});
     site.layout = layout();
@@ -394,6 +486,7 @@
     site.layout.hiddenBlocks = [...set];
     window.__cabinet.me.site.layout = site.layout;
     window.__cabinet.applySite(site);
+    if (window.__cabinet.renderCabinet) window.__cabinet.renderCabinet();
     markDirty();
   }
 
@@ -421,6 +514,7 @@
     $$("[data-hide-block]").forEach((b) => {
       b.onclick = () => toggleBlock(b.dataset.hideBlock);
     });
+    $("#ed-mods") && ($("#ed-mods").onclick = openMods);
   }
 
   window.CabinetEditor = {
@@ -428,6 +522,7 @@
       return state.on;
     },
     bindSlots,
+    bindMemorial,
     mount,
     markDirty,
   };

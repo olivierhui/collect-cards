@@ -47,6 +47,22 @@ SITE_DEFAULT = {
         "slotOrder": [],
         "hiddenSlots": [],
         "hiddenBlocks": [],
+        "modules": {
+            "propTitle": True,
+            "propCode": True,
+            "propCollection": True,
+            "propWallpaper": True,
+            "propHint": True,
+            "propCover": True,
+            "faceToggle": True,
+            "ownedBadge": True,
+            "cardDate": False,
+        },
+    },
+    "memorial": {
+        "title": "纪念组",
+        "slots": 5,
+        "codes": ["", "", "", "", ""],
     },
 }
 
@@ -520,6 +536,33 @@ def cabinet(pid: str) -> dict[str, Any]:
             if r["characterId"] not in seen:
                 ordered.append(r)
         rows = ordered
+    mem = memorial()
+    owned_by_code = {c["code"]: c for c in owned}
+    memorial_slots = []
+    for i, code in enumerate(mem.get("codes") or []):
+        card = find_card(code) if code else None
+        hit = owned_by_code.get(code) if code else None
+        cover = hit or (
+            {
+                **card,
+                "variant": "gold",
+                "showcase": True,
+            }
+            if card
+            else None
+        )
+        memorial_slots.append(
+            {
+                "slot": f"MEM-{i + 1:02d}",
+                "index": i,
+                "code": code or "",
+                "name": (hit or card or {}).get("characterName") or (hit or card or {}).get("name") or (hit or card or {}).get("title") or "",
+                "owned": bool(hit or card),
+                "cards": [cover] if cover else [],
+                "cover": cover,
+                "memorial": True,
+            }
+        )
     return {
         "season": season,
         "seasonTitle": cat.get("seasonTitle") or season,
@@ -527,6 +570,7 @@ def cabinet(pid: str) -> dict[str, Any]:
         "todayDrops": today_codes,
         "slots": rows,
         "layout": lay,
+        "memorial": {**mem, "slots": memorial_slots},
     }
 
 
@@ -591,24 +635,35 @@ def save_site(payload: dict[str, Any]) -> dict[str, Any]:
             continue
         if key == "layout":
             continue
+        if key == "memorial":
+            continue
         cur[key] = str(payload[key]).strip()
     if isinstance(payload.get("layout"), dict):
         cur["layout"] = _normalize_layout(payload["layout"], cur.get("layout"))
+    if isinstance(payload.get("memorial"), dict):
+        cur["memorial"] = _normalize_memorial(payload["memorial"])
     _write(SITE, cur)
     return cur
 
 
 def _normalize_layout(incoming: dict[str, Any], prev: Any) -> dict[str, Any]:
+    default_mods = dict(SITE_DEFAULT["layout"]["modules"])
     base = {
         "slotOrder": [],
         "hiddenSlots": [],
         "hiddenBlocks": [],
+        "modules": default_mods,
     }
     if isinstance(prev, dict):
-        base.update({k: prev[k] for k in base if k in prev})
+        for k in ("slotOrder", "hiddenSlots", "hiddenBlocks"):
+            if k in prev:
+                base[k] = prev[k]
+        if isinstance(prev.get("modules"), dict):
+            base["modules"] = {**default_mods, **prev["modules"]}
     order = incoming.get("slotOrder", base["slotOrder"])
     hidden = incoming.get("hiddenSlots", base["hiddenSlots"])
     blocks = incoming.get("hiddenBlocks", base["hiddenBlocks"])
+    mods_in = incoming.get("modules", base["modules"])
     def ids(val: Any) -> list[str]:
         if not isinstance(val, list):
             return []
@@ -618,11 +673,40 @@ def _normalize_layout(incoming: dict[str, Any], prev: Any) -> dict[str, Any]:
             if s and s not in out:
                 out.append(s)
         return out
+    mods = dict(default_mods)
+    if isinstance(mods_in, dict):
+        for k, v in mods_in.items():
+            if k in default_mods:
+                mods[k] = bool(v)
     return {
         "slotOrder": [str(x).zfill(3) if str(x).isdigit() else str(x) for x in ids(order)],
         "hiddenSlots": [str(x).zfill(3) if str(x).isdigit() else str(x) for x in ids(hidden)],
         "hiddenBlocks": ids(blocks),
+        "modules": mods,
     }
+
+
+def _normalize_memorial(incoming: dict[str, Any]) -> dict[str, Any]:
+    n = int(incoming.get("slots") or 5)
+    n = max(1, min(24, n))
+    codes = incoming.get("codes") if isinstance(incoming.get("codes"), list) else []
+    out_codes = []
+    for i in range(n):
+        c = str(codes[i]).strip() if i < len(codes) else ""
+        out_codes.append(c if FOLDER_RE.match(c) else "")
+    title = str(incoming.get("title") or "纪念组").strip() or "纪念组"
+    return {"title": title, "slots": n, "codes": out_codes}
+
+
+def memorial() -> dict[str, Any]:
+    raw = site().get("memorial")
+    if not isinstance(raw, dict):
+        raw = SITE_DEFAULT["memorial"]
+    return _normalize_memorial(raw)
+
+
+def memorial_codes() -> list[str]:
+    return [c for c in memorial().get("codes") or [] if c]
 
 
 def site_layout() -> dict[str, Any]:
