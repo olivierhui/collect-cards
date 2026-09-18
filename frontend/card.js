@@ -495,7 +495,8 @@
   CardView.prototype.fitMini = function () {
     const slot = this.root.closest(".slot");
     if (!slot) return;
-    const w = slot.clientWidth || 160;
+    const pad = 22;
+    const w = Math.max(72, (slot.clientWidth || 160) - pad);
     this.root.style.setProperty("--mini-s", String(w / 380));
   };
 
