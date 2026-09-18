@@ -257,7 +257,7 @@ async def admin_save(request: Request):
     body = await request.json()
     site = store.save_site(body.get("site") or {})
     cat = store.save_admin_catalog(body)
-    gh = await github_sync.push_data_files("admin: update cabinet site")
+    gh = await github_sync.push_data_files("admin: update cabinet site", include_cards=False)
     live = store.catalog()
     return {
         "ok": True,
@@ -296,9 +296,7 @@ async def admin_drop_fix(request: Request):
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-    gh = await github_sync.push_data_files(
-        f"admin: drop-fix {result.get('action')} {result.get('code')}"
-    )
+    gh = await github_sync.push_data_files(f"admin: drop-fix {result.get('action')} {result.get('code')}", include_cards=False)
     result["github"] = gh
     return result
 
@@ -313,7 +311,7 @@ async def admin_schedule(request: Request):
         rec = store.register_drop(code, day, str(body.get("name") or ""), str(body.get("title") or ""))
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-    await github_sync.push_data_files(f"admin: schedule {code} {day}")
+    await github_sync.push_data_files(f"admin: schedule {code} {day}", include_cards=False)
     return rec
 
 

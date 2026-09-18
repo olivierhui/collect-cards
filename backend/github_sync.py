@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import os
 from pathlib import Path
 from typing import Any
@@ -40,6 +41,11 @@ def _headers(token: str) -> dict[str, str]:
     }
 
 
+def _git_blob_sha(data: bytes) -> str:
+    """Same object id GitHub uses for blobs — skip upload when unchanged."""
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+
+
 def _local_card_files() -> list[Path]:
     if not store.CARDS.is_dir():
         return []
@@ -50,38 +56,45 @@ def _local_card_files() -> list[Path]:
     return sorted(out)
 
 
-def _collect_local_relpaths() -> dict[str, Path]:
-    """relpath -> local Path for every file we mirror to GitHub."""
+def _collect_local_relpaths(*, include_cards: bool) -> dict[str, Path]:
     mapping: dict[str, Path] = {}
     for rel in SYNC_JSON:
         local = ROOT / rel
         if local.is_file():
             mapping[rel] = local
-    for path in _local_card_files():
-        mapping[path.relative_to(ROOT).as_posix()] = path
+    if include_cards:
+        for path in _local_card_files():
+            mapping[path.relative_to(ROOT).as_posix()] = path
     return mapping
 
 
-async def _remote_card_paths(client: httpx.AsyncClient, repo: str, tree_sha: str) -> set[str]:
-    """All blob paths under data/cards/ on the current commit tree."""
+async def _remote_blob_map(
+    client: httpx.AsyncClient, repo: str, tree_sha: str
+) -> dict[str, str]:
+    """path -> blob sha for site/catalog/cards on the current commit."""
     url = f"https://api.github.com/repos/{repo}/git/trees/{tree_sha}"
     r = await client.get(url, params={"recursive": "1"})
     if r.status_code != 200:
-        return set()
-    paths: set[str] = set()
+        return {}
+    out: dict[str, str] = {}
     for row in (r.json() or {}).get("tree") or []:
         if row.get("type") != "blob":
             continue
         path = str(row.get("path") or "")
-        if path.startswith(CARDS_PREFIX + "/") and not path.endswith("/.gitkeep"):
-            paths.add(path)
-    return paths
+        sha = str(row.get("sha") or "")
+        if not path or not sha:
+            continue
+        if path in SYNC_JSON or (
+            path.startswith(CARDS_PREFIX + "/") and not path.endswith("/.gitkeep")
+        ):
+            out[path] = sha
+    return out
 
 
-async def push_data_files(message: str) -> dict[str, Any]:
-    """Push site/catalog + every card file; delete GitHub card files removed locally.
+async def push_data_files(message: str, *, include_cards: bool = True) -> dict[str, Any]:
+    """Push site/catalog (+ cards). Only uploads blobs whose content actually changed.
 
-    Uses one Git commit via the Git Data API so add/delete stays atomic.
+    include_cards=False: only site.json + catalog.json (fast path for text/drop edits).
     """
     token = (os.getenv("GITHUB_TOKEN") or "").strip()
     if not token:
@@ -90,7 +103,7 @@ async def push_data_files(message: str) -> dict[str, Any]:
     headers = _headers(token)
     repo = _repo()
     branch = _branch()
-    local_map = _collect_local_relpaths()
+    local_map = _collect_local_relpaths(include_cards=include_cards)
 
     async with httpx.AsyncClient(timeout=120.0, headers=headers) as client:
         ref = await client.get(f"https://api.github.com/repos/{repo}/git/ref/heads/{branch}")
@@ -107,15 +120,21 @@ async def push_data_files(message: str) -> dict[str, Any]:
         if not base_tree:
             return {"ok": False, "reason": "no-base-tree"}
 
-        remote_cards = await _remote_card_paths(client, repo, base_tree)
+        remote = await _remote_blob_map(client, repo, base_tree)
+        remote_cards = {p for p in remote if p.startswith(CARDS_PREFIX + "/")}
         local_card_rels = {p for p in local_map if p.startswith(CARDS_PREFIX + "/")}
-        to_delete = sorted(remote_cards - local_card_rels)
+        to_delete = sorted(remote_cards - local_card_rels) if include_cards else []
 
         tree_items: list[dict[str, Any]] = []
         uploaded: list[str] = []
+        skipped = 0
 
         for rel, path in local_map.items():
             raw = path.read_bytes()
+            local_sha = _git_blob_sha(raw)
+            if remote.get(rel) == local_sha:
+                skipped += 1
+                continue
             blob = await client.post(
                 f"https://api.github.com/repos/{repo}/git/blobs",
                 json={
@@ -149,7 +168,13 @@ async def push_data_files(message: str) -> dict[str, Any]:
             )
 
         if not tree_items:
-            return {"ok": True, "files": [], "deleted": [], "skipped": "nothing-to-sync"}
+            return {
+                "ok": True,
+                "files": [],
+                "deleted": [],
+                "skipped": skipped,
+                "unchanged": True,
+            }
 
         tree = await client.post(
             f"https://api.github.com/repos/{repo}/git/trees",
@@ -186,5 +211,6 @@ async def push_data_files(message: str) -> dict[str, Any]:
         "ok": True,
         "files": uploaded,
         "deleted": to_delete,
+        "skipped": skipped,
         "commit": new_sha,
     }
