@@ -43,6 +43,8 @@ SITE_DEFAULT = {
     "note": "",
     "upgradeUrl": "https://www.patreon.com/18animegirls/membership",
     "serialCollectionUrl": "",
+    "collectionLabel": "打开 Patreon 帖子",
+    "hint": "滚轮缩放 · 右键返回",
     "layout": {
         "slotOrder": [],
         "hiddenSlots": [],

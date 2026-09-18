@@ -6,7 +6,7 @@
   <title>收集卡系列 · 展示柜</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+SC:wght@500;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=shelf" />
+  <link rel="stylesheet" href="/static/styles.css?v=post" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute;overflow:hidden">
@@ -124,6 +124,7 @@
       <button type="button" class="cover-fab" id="btn-cover" data-mod="propCover">设为封面</button>
     </div>
     <button type="button" class="ov-chip" id="btn-hide-info">属性</button>
+    <a class="ov-chip hidden" id="btn-patreon-post" href="#" target="_blank" rel="noopener noreferrer">帖子</a>
     <button type="button" class="ov-chip ov-close" id="close-viewer">关闭</button>
     <aside class="prop-sheet" id="viewer-side">
       <header class="prop-head" data-mod="propTitle">
@@ -131,7 +132,7 @@
         <button type="button" class="prop-x" id="btn-hide-info-x" aria-label="收起属性">收起</button>
       </header>
       <p class="muted" id="viewer-code" data-mod="propCode"></p>
-      <a class="prop-link hidden" id="prop-collection" href="#" target="_blank" rel="noopener noreferrer" data-mod="propCollection">Patreon 集合</a>
+      <a class="prop-link hidden" id="prop-collection" href="#" target="_blank" rel="noopener noreferrer" data-mod="propCollection">打开 Patreon 帖子</a>
       <div class="prop-tools" data-mod="propWallpaper">
         <button type="button" id="btn-phone">手机壁纸</button>
         <button type="button" id="btn-desk">电脑壁纸</button>
@@ -142,7 +143,7 @@
 
   <script src="/static/i18n.js?v=1"></script>
   <script src="/static/card.js?v=back-text"></script>
-  <script src="/static/app.js?v=shelf"></script>
-  <script src="/static/editor.js?v=mem"></script>
+  <script src="/static/app.js?v=post"></script>
+  <script src="/static/editor.js?v=post"></script>
 </body>
 </html>

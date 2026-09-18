@@ -410,15 +410,28 @@
     $("#btn-desk").textContent = t("wallpaperDesk");
     $("#close-viewer").textContent = t("close");
     const hint = $("#viewer-hint");
-    if (hint) hint.textContent = t("hint");
+    const site = (me && me.site) || {};
+    if (hint) hint.textContent = site.hint || t("hint");
+    const url = view.serialUrl || site.serialCollectionUrl || "";
+    const label = site.collectionLabel || "打开 Patreon 帖子";
     const link = $("#prop-collection");
-    const url = view.serialUrl || (me && me.site && me.site.serialCollectionUrl) || "";
     if (link) {
+      link.textContent = label;
       if (url) {
         link.href = url;
         link.classList.remove("hidden");
       } else {
         link.classList.add("hidden");
+      }
+    }
+    const chip = $("#btn-patreon-post");
+    if (chip) {
+      chip.textContent = label;
+      if (url && mods.propCollection !== false) {
+        chip.href = url;
+        chip.classList.remove("hidden");
+      } else {
+        chip.classList.add("hidden");
       }
     }
   }

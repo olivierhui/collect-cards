@@ -262,6 +262,9 @@
       </div>
       <h4>投放纠错</h4>
       <p class="muted tiny">投放错了：改编号、改日期、或撤销。已入柜的人可以收回或换成正确的卡。</p>
+      <label>这一张的 Patreon 帖子
+        <input id="ed-post-url" type="url" placeholder="https://www.patreon.com/posts/..." />
+      </label>
       <label>编号 <input id="ed-code" placeholder="S1-001-1" value="${(cards[0] && cards[0].code) || ""}" /></label>
       <div class="ed-actions">
         <button type="button" id="ed-impact">看谁已经拿到</button>
@@ -304,6 +307,25 @@
       }
     };
     $("#ed-open-fix").onclick = () => openFix($("#ed-code").value.trim());
+    const post = $("#ed-post-url");
+    const code0 = (cards[0] && cards[0].code) || "";
+    if (post && code0) {
+      api("/api/admin/card-text?code=" + encodeURIComponent(code0)).then((r) => {
+        post.value = (r.text && r.text.serialUrl) || "";
+      }).catch(() => {});
+      post.onchange = async () => {
+        try {
+          await api("/api/admin/card-text", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: code0, serialUrl: post.value.trim() }),
+          });
+          setStatus("这张卡的帖子链接已保存");
+        } catch (e) {
+          setStatus(e.message);
+        }
+      };
+    }
   }
 
   async function assignDrop(code) {
@@ -453,28 +475,55 @@
       box.remove();
       return;
     }
+    const site = window.__cabinet.me.site || {};
     const mods = layout().modules || {};
     box = document.createElement("div");
     box.id = "ed-mod-pop";
     box.className = "ed-mod-pop";
     const offByDefault = { cardDate: true };
-    box.innerHTML = `<h4>要留的模块</h4>` + Object.keys(MOD_LABELS).map((k) => {
+    const rows = Object.keys(MOD_LABELS).map((k) => {
       const on = offByDefault[k] ? mods[k] === true : mods[k] !== false;
       return `<label class="ed-check"><input type="checkbox" data-mod="${k}" ${on ? "checked" : ""}/> ${MOD_LABELS[k]}</label>`;
     }).join("");
+    box.innerHTML = `
+      <h4>要留的模块</h4>
+      ${rows}
+      <label>集合链接（Patreon 帖子）
+        <input id="ed-col-url" type="url" placeholder="https://www.patreon.com/posts/..." value="${site.serialCollectionUrl || ""}" />
+      </label>
+      <label>链接按钮文字
+        <input id="ed-col-label" value="${site.collectionLabel || "打开 Patreon 帖子"}" />
+      </label>
+      <label>操作提示
+        <input id="ed-hint" value="${site.hint || ""}" placeholder="滚轮缩放 · 右键返回" />
+      </label>
+      <p class="muted tiny">点开一张卡后，左上角会出现「帖子」。单卡链接也可在格子里改。</p>`;
     document.body.appendChild(box);
-    box.querySelectorAll("input").forEach((inp) => {
+    box.addEventListener("click", (e) => e.stopPropagation());
+    box.querySelectorAll("input[data-mod]").forEach((inp) => {
       inp.onchange = () => {
-        const site = window.__cabinet.me.site || (window.__cabinet.me.site = {});
-        site.layout = layout();
-        site.layout.modules = site.layout.modules || {};
-        site.layout.modules[inp.dataset.mod] = inp.checked;
-        window.__cabinet.me.site.layout = site.layout;
+        const s = window.__cabinet.me.site || (window.__cabinet.me.site = {});
+        s.layout = layout();
+        s.layout.modules = s.layout.modules || {};
+        s.layout.modules[inp.dataset.mod] = inp.checked;
+        window.__cabinet.me.site.layout = s.layout;
         markDirty();
         window.__cabinet.renderCabinet();
-        if (window.__cabinet.applySite) window.__cabinet.applySite(site);
+        if (window.__cabinet.applySite) window.__cabinet.applySite(s);
       };
     });
+    const bindSite = (id, key) => {
+      const el = box.querySelector(id);
+      if (!el) return;
+      el.oninput = () => {
+        const s = window.__cabinet.me.site || (window.__cabinet.me.site = {});
+        s[key] = el.value.trim();
+        markDirty();
+      };
+    };
+    bindSite("#ed-col-url", "serialCollectionUrl");
+    bindSite("#ed-col-label", "collectionLabel");
+    bindSite("#ed-hint", "hint");
   }
 
   function toggleBlock(id) {
