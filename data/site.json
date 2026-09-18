@@ -4,5 +4,37 @@
   "gate": "登录后打开你的个人典藏柜。当天仍在订的会员，卡会自动入柜。",
   "subscribeUrl": "https://www.patreon.com/18animegirls",
   "subscribeLabel": "去 Patreon 订阅",
-  "pageTitle": "收集卡系列 · 展示柜"
+  "pageTitle": "收集卡系列 · 展示柜",
+  "note": "",
+  "upgradeUrl": "https://www.patreon.com/18animegirls/membership",
+  "serialCollectionUrl": "",
+  "collectionLabel": "打开 Patreon 帖子",
+  "hint": "滚轮缩放 · 右键返回",
+  "layout": {
+    "slotOrder": [],
+    "hiddenSlots": [],
+    "hiddenBlocks": [],
+    "modules": {
+      "propTitle": true,
+      "propCode": true,
+      "propCollection": true,
+      "propWallpaper": true,
+      "propHint": true,
+      "propCover": true,
+      "faceToggle": true,
+      "ownedBadge": true,
+      "cardDate": false
+    }
+  },
+  "memorial": {
+    "title": "纪念组",
+    "slots": 5,
+    "codes": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  }
 }
