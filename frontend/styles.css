@@ -31,7 +31,7 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
 .slot {
   --fx: #d4af37;
   --fx2: #fff1b8;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 3136 / 4032;
   border-radius: 16px;
   background: linear-gradient(180deg, #1a1814, #100e0c);
   border: 1px solid #2e2a24;
@@ -125,6 +125,42 @@ body.hide-owned-badge .slot .count { display: none !important; }
   margin: 8px 32px 12px;
   letter-spacing: 0.12em;
 }
+.shelf-drop { position: relative; display: inline-block; }
+.shelf-btn {
+  font-family: "Noto Serif SC", serif;
+  font-size: 28px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.shelf-caret {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid var(--gold);
+  opacity: 0.85;
+}
+.shelf-menu {
+  position: absolute; left: 0; top: calc(100% + 8px); z-index: 30;
+  min-width: 220px;
+  background: rgba(18,16,14,.96);
+  border: 1px solid rgba(232,195,106,.28);
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+.shelf-menu button {
+  display: block; width: 100%; text-align: left;
+  background: transparent; border: none; color: var(--text);
+  padding: 10px 14px; border-radius: 10px; font-size: 15px;
+}
+.shelf-menu button.on,
+.shelf-menu button:hover { background: rgba(232,195,106,.12); color: var(--gold); }
 .memorial-wrap { padding-bottom: 24px; }
 .ed-mod-pop {
   position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%);
@@ -176,7 +212,7 @@ body.hide-owned-badge .slot .count { display: none !important; }
   left: 50%;
   top: 50%;
   width: 380px;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 3136 / 4032;
   height: auto;
   gap: 0;
   display: block;
@@ -229,7 +265,7 @@ body.hide-owned-badge .slot .count { display: none !important; }
 }
 .card-root.holo-card {
   width: min(380px, 72vw);
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 3136 / 4032;
   position: relative;
   isolation: isolate;
   overflow: hidden;

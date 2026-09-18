@@ -6,7 +6,7 @@
   <title>收集卡系列 · 展示柜</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+SC:wght@500;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=mem" />
+  <link rel="stylesheet" href="/static/styles.css?v=shelf" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute;overflow:hidden">
@@ -37,7 +37,16 @@
   <header class="top">
     <div>
       <p class="kicker">18ANIME GIRLS</p>
-      <h1>个人典藏柜</h1>
+      <div class="shelf-drop">
+        <button type="button" class="shelf-btn" id="shelf-btn" aria-expanded="false">
+          <span id="shelf-label">个人典藏柜</span>
+          <span class="shelf-caret" aria-hidden="true"></span>
+        </button>
+        <div class="shelf-menu hidden" id="shelf-menu">
+          <button type="button" data-shelf="cabinet">个人典藏柜</button>
+          <button type="button" data-shelf="memorial">纪念组</button>
+        </div>
+      </div>
     </div>
     <div class="top-actions" id="top-actions"></div>
   </header>
@@ -51,7 +60,7 @@
   </section>
   <main class="cabinet hidden" id="cabinet" data-block="cabinet"></main>
   <section class="memorial-wrap hidden" id="memorial-wrap" data-block="memorial">
-    <h2 class="mem-title" id="mem-title">纪念组</h2>
+    <h2 class="mem-title hidden" id="mem-title">纪念组</h2>
     <div class="cabinet mem-grid" id="memorial"></div>
   </section>
 
@@ -133,7 +142,7 @@
 
   <script src="/static/i18n.js?v=1"></script>
   <script src="/static/card.js?v=back-text"></script>
-  <script src="/static/app.js?v=mem"></script>
+  <script src="/static/app.js?v=shelf"></script>
   <script src="/static/editor.js?v=mem"></script>
 </body>
 </html>

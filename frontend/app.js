@@ -8,6 +8,7 @@
   const slotViews = [];
 
   const TIER_FRAME = { t2: "iron", t3: "silver", t4: "gold", t5: "prism" };
+  let shelf = localStorage.getItem("cc-shelf") || "cabinet";
 
   async function api(url, opts) {
     const r = await fetch(url, Object.assign({ headers: { "Content-Type": "application/json" } }, opts || {}));
@@ -240,9 +241,9 @@
     if (!me || !me.user || !mem) {
       wrap.classList.add("hidden");
       mountSlotLives();
+      applyShelf();
       return;
     }
-    wrap.classList.toggle("hidden", !editing && hiddenBlocks.has("memorial"));
     if (title) title.textContent = mem.title || "纪念组";
     const slots = mem.slots || [];
     grid.innerHTML = slots.map((s, i) => {
@@ -269,6 +270,55 @@
       window.CabinetEditor.bindMemorial();
     }
     mountSlotLives();
+    applyShelf();
+  }
+
+  function applyShelf() {
+    localStorage.setItem("cc-shelf", shelf);
+    const cab = $("#cabinet");
+    const mem = $("#memorial-wrap");
+    const lab = $("#shelf-label");
+    const editing = window.CabinetEditor && window.CabinetEditor.on;
+    const hiddenBlocks = new Set((me && me.site && me.site.layout && me.site.layout.hiddenBlocks) || []);
+    const memTitle = (cabinet && cabinet.memorial && cabinet.memorial.title) || "纪念组";
+    const cabTitle = (me && me.site && me.site.title) || "个人典藏柜";
+    if (lab) lab.textContent = shelf === "memorial" ? memTitle : cabTitle;
+    if (cab) {
+      const show = !!me && !!me.user && (shelf === "cabinet" || editing);
+      cab.classList.toggle("hidden", !show);
+    }
+    if (mem) {
+      const show = !!me && !!me.user && (shelf === "memorial" || editing) && (editing || !hiddenBlocks.has("memorial"));
+      mem.classList.toggle("hidden", !show);
+    }
+    document.querySelectorAll("#shelf-menu [data-shelf]").forEach((b) => {
+      b.classList.toggle("on", b.dataset.shelf === shelf);
+    });
+  }
+
+  function bindShelf() {
+    const btn = $("#shelf-btn");
+    const menu = $("#shelf-menu");
+    if (!btn || !menu || btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const open = !menu.classList.contains("hidden");
+      menu.classList.toggle("hidden", open);
+      btn.setAttribute("aria-expanded", open ? "false" : "true");
+    };
+    menu.querySelectorAll("[data-shelf]").forEach((b) => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        shelf = b.dataset.shelf;
+        menu.classList.add("hidden");
+        applyShelf();
+      };
+    });
+    document.addEventListener("click", () => {
+      menu.classList.add("hidden");
+      btn.setAttribute("aria-expanded", "false");
+    });
   }
 
   async function openMemorial(index) {
@@ -389,17 +439,17 @@
   }
 
   function applyZoom() {
-    const card = $("#float-stage .float-card");
-    if (card) card.style.transform = `scale(${view.scale})`;
+    const el = document.querySelector("#viewer-stage .holo-card-wrap") || $("#float-stage .float-card");
+    if (el) el.style.transform = `scale(${view.scale})`;
   }
 
   function maxZoom() {
-    const stage = $("#float-stage");
-    if (!stage) return 1.8;
-    const r = stage.getBoundingClientRect();
-    const capW = window.innerWidth * 0.92 / Math.max(r.width, 1);
-    const capH = window.innerHeight * 0.92 / Math.max(r.height, 1);
-    return Math.max(1, Math.min(capW, capH, 2.4));
+    const card = document.querySelector("#viewer-stage .holo-card") || document.querySelector("#live-card");
+    const cw = (card && card.clientWidth) || 320;
+    const ch = (card && card.clientHeight) || 420;
+    const capW = (window.innerWidth * 0.94) / Math.max(cw, 1);
+    const capH = (window.innerHeight * 0.90) / Math.max(ch, 1);
+    return Math.max(1, Math.min(capW, capH, 12));
   }
 
   async function selectCard(code) {
@@ -557,7 +607,9 @@
         cabinet = null;
       }
     } else cabinet = null;
+    bindShelf();
     renderCabinet();
+    applyShelf();
     if (window.CabinetEditor) window.CabinetEditor.mount();
   }
 
