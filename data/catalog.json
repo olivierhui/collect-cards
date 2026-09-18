@@ -4,20 +4,21 @@
   "timezone": "Asia/Shanghai",
   "slots": 24,
   "tiers": {
-    "t3": { "label": "T3 白银", "variant": "silver" },
-    "t4": { "label": "T4 黄金", "variant": "gold" },
-    "t5": { "label": "T5 幻彩", "variant": "prism", "back": true }
-  },
-  "drops": {
-    "2026-09-16": ["S1-001-1"]
-  },
-  "characters": [
-    {
-      "id": "001",
-      "name": "Yaniko Satou",
-      "cards": [
-        { "n": 1, "code": "S1-001-1", "date": "2026-09-16", "title": "Yaniko Satou" }
-      ]
+    "t3": {
+      "label": "T3 白银",
+      "variant": "silver"
+    },
+    "t4": {
+      "label": "T4 黄金",
+      "variant": "gold"
+    },
+    "t5": {
+      "label": "T5 幻彩",
+      "variant": "prism",
+      "back": true
     }
-  ]
+  },
+  "drops": {},
+  "characters": [],
+  "pending": []
 }
