@@ -103,24 +103,26 @@
   </div>
 
   <div class="overlay hidden" id="overlay">
-    <div class="viewer">
-      <button class="close" id="close-viewer" type="button">关闭</button>
-      <div class="viewer-main">
-        <div class="viewer-strip" id="viewer-strip"></div>
-        <div class="viewer-stage" id="viewer-stage"></div>
-        <button type="button" class="cover-fab" id="btn-cover">设为封面</button>
-      </div>
-      <div class="viewer-side" id="viewer-side">
-        <h2 id="viewer-title"></h2>
-        <p class="muted" id="viewer-code"></p>
-        <div class="row">
-          <button type="button" id="btn-hide-info">隐藏介绍</button>
-          <button type="button" id="btn-phone">手机壁纸</button>
-          <button type="button" id="btn-desk">电脑壁纸</button>
-        </div>
-        <p class="muted tiny" id="viewer-hint">移动鼠标看眼神 · 点胸部会弹 · 点卡翻面 · 右键返回</p>
-      </div>
+    <div class="float-stage" id="float-stage">
+      <div class="viewer-strip" id="viewer-strip"></div>
+      <div class="float-card" id="viewer-stage"></div>
+      <button type="button" class="cover-fab" id="btn-cover">设为封面</button>
     </div>
+    <button type="button" class="ov-chip" id="btn-hide-info">属性</button>
+    <button type="button" class="ov-chip ov-close" id="close-viewer">关闭</button>
+    <aside class="prop-sheet" id="viewer-side">
+      <header class="prop-head">
+        <h2 id="viewer-title"></h2>
+        <button type="button" class="prop-x" id="btn-hide-info-x" aria-label="收起属性">收起</button>
+      </header>
+      <p class="muted" id="viewer-code"></p>
+      <a class="prop-link hidden" id="prop-collection" href="#" target="_blank" rel="noopener noreferrer">Patreon 集合</a>
+      <div class="prop-tools">
+        <button type="button" id="btn-phone">手机壁纸</button>
+        <button type="button" id="btn-desk">电脑壁纸</button>
+      </div>
+      <p class="muted tiny" id="viewer-hint">滚轮缩放 · 右键返回</p>
+    </aside>
   </div>
 
   <script src="/static/i18n.js?v=1"></script>

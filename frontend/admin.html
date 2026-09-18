@@ -22,22 +22,24 @@
   <p class="admin-note" id="note">文字、投放、待放区、粉丝在这里改。展示页右下角「编辑页面」可以拖格子。卡面扫光/眼睛/胸部不要在这里动。</p>
 
   <section class="admin-card">
-    <h2>网站文字与链接</h2>
+    <details open>
+    <summary>网站文字与链接</summary>
     <label>页眉小字 <input id="kicker" /></label>
     <label>大标题 <input id="title" /></label>
     <label>未登录说明 <textarea id="gate" rows="3"></textarea></label>
     <label>订阅按钮文字 <input id="subscribeLabel" /></label>
     <label>订阅链接 <input id="subscribeUrl" /></label>
     <label>升级 Patreon 等级链接 <input id="upgradeUrl" placeholder="https://www.patreon.com/.../membership" /></label>
-    <label>编号默认集合链接（框上编号可点，样子不变） <input id="serialCollectionUrl" /></label>
+    <label>默认集合链接（出现在属性里） <input id="serialCollectionUrl" /></label>
     <label>浏览器标题 <input id="pageTitle" /></label>
     <label>季名 <input id="seasonTitle" /></label>
     <label>格子数 <input id="slots" type="number" min="1" max="100" /></label>
+    </details>
   </section>
 
   <section class="admin-card">
     <h2>激活区</h2>
-    <p class="muted tiny">已进入投放名单的卡。可以改到待放区，或删除。</p>
+    <p class="muted tiny">已进入投放名单的卡。改到待放区后，所有会员柜里的这张会消失。</p>
     <div id="zone-active" class="zone-grid"></div>
   </section>
 
@@ -55,14 +57,15 @@
   </section>
 
   <section class="admin-card">
-    <h2>正面 / 背面文字</h2>
-    <p class="muted tiny">只改字。深度、扫光、眼睛、胸部全部不动。</p>
+    <details>
+    <summary>正面 / 背面文字（建议在工作室改）</summary>
+    <p class="muted tiny">优先在「分层闪卡」里改背面 S/SS/SSS。这里只改字，不动效果。</p>
     <label>编号 <input id="txt-code" placeholder="S1-001-1" /></label>
     <button type="button" id="txt-load">读出这张</button>
     <label>角色名 <input id="txt-name" /></label>
     <label>正面品牌 <input id="txt-brand" /></label>
     <label>正面编号 <input id="txt-serial" /></label>
-    <label>编号链接（Patreon 集合） <input id="txt-serialUrl" /></label>
+    <label>属性里的集合链接（不印在框上） <input id="txt-serialUrl" /></label>
     <label>日期 <input id="txt-date" /></label>
     <label>版本字 <input id="txt-edition" /></label>
     <label>背面小字（个人典藏） <input id="txt-backKicker" /></label>
@@ -70,6 +73,7 @@
     <label>背面品牌（ANIME GIRLS） <input id="txt-backBrand" /></label>
     <label>背面第二行（18 ANIME GIRLS） <input id="txt-backSub" /></label>
     <button type="button" class="primary" id="txt-save">只保存文字</button>
+    </details>
   </section>
 
   <section class="admin-card">
@@ -78,11 +82,13 @@
   </section>
 
   <section class="admin-card">
-    <h2>粉丝</h2>
+    <details>
+    <summary>粉丝</summary>
     <p class="muted tiny">谁有几张、这张卡在谁柜里。</p>
     <div id="fans-users"></div>
     <h3 class="admin-sub">按卡</h3>
     <div id="fans-cards"></div>
+    </details>
   </section>
 
   <section class="admin-card">

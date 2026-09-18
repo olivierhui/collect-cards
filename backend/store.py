@@ -1060,7 +1060,8 @@ def set_card_zone(code: str, zone: str, *, delete: bool = False, recall: bool = 
         raw["pending"] = parked
         raw["drops"] = drops
         _write(CATALOG, raw)
-        return {"ok": True, "code": code, "zone": "pending"}
+        recalled = recall_code(code)
+        return {"ok": True, "code": code, "zone": "pending", "recalled": recalled}
 
     if zone == "active":
         parked = [c for c in parked if c != code]

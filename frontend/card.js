@@ -65,6 +65,7 @@
     this.tilt = this.meta.tilt !== false;
     this.floatOn = this.meta.float !== false;
     this.gaze = this.meta.gaze !== false;
+    this.mini = !!spec.mini;
     this.render();
     this.bind();
     this.load();
@@ -138,10 +139,10 @@
         <div class="holo-type-date"></div>
       </div>
       </div>
-      <div class="holo-face-toggle">
+      ${this.mini ? "" : `<div class="holo-face-toggle">
         <button type="button" class="holo-face-btn active" data-face="front">正面</button>
         <button type="button" class="holo-face-btn" data-face="back">背面</button>
-      </div>`;
+      </div>`}`;
     this.cardEl = this.root.querySelector(".holo-card");
     this.cardEl.style.setProperty("--spark", sparkTexture());
     this.flip = this.root.querySelector(".holo-flipper");
@@ -184,20 +185,6 @@
     setTxt(".holo-back-sub", this.meta.backSub || "");
     setTxt(".holo-back-edition", this.meta.edition || "");
     setTxt(".holo-back-serial", serial);
-    const serEl = this.root.querySelector(".holo-type-serial");
-    const siteUrl = (window.__cabinet && window.__cabinet.me && window.__cabinet.me.site && window.__cabinet.me.site.serialCollectionUrl) || "";
-    const url = (this.meta.serialUrl || siteUrl || "").trim();
-    if (serEl && url && serial) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.className = "holo-type-serial-link";
-      a.textContent = serial;
-      serEl.textContent = "";
-      serEl.appendChild(a);
-      serEl.style.display = "";
-    }
   };
 
   CardView.prototype.load = function () {
@@ -266,6 +253,10 @@
       this.down = { x: e.clientX, y: e.clientY, t: Date.now() };
     });
     el.addEventListener("pointerup", (e) => {
+      if (this.mini) {
+        this.down = null;
+        return;
+      }
       if (!this.down) return;
       const dist = Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y);
       this.down = null;

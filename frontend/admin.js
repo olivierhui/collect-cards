@@ -38,7 +38,7 @@
         <p class="muted tiny">${c.name || "未命名"} · ${c.holders || 0} 人有</p>
         <div class="ed-actions">
           ${zone === "active"
-            ? `<button type="button" data-act="pending">去待放</button>`
+            ? `<button type="button" data-act="pending">待放（收回所有人）</button>`
             : `<button type="button" data-act="active">去激活</button>`}
           <button type="button" data-act="text">改文字</button>
           <button type="button" data-act="delete">删除</button>

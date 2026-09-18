@@ -3,8 +3,9 @@
   let me = null;
   let cabinet = null;
   let viewer = null;
-  let view = { cid: null, cards: [], selected: null, simple: localStorage.getItem("cc-simple") === "1" };
+  let view = { cid: null, cards: [], selected: null, simple: localStorage.getItem("cc-simple") === "1", scale: 1 };
   const undo = [];
+  const slotViews = [];
 
   const TIER_FRAME = { t2: "iron", t3: "silver", t4: "gold", t5: "prism" };
 
@@ -207,7 +208,8 @@
             <div class="ed-name-tag">${s.name || ""}</div>
           </article>`;
         }
-        return `<article class="slot ${v}${hid}" data-cid="${s.characterId}">
+        return `<article class="slot ${v}${hid}" data-cid="${s.characterId}" data-cover="${cover && cover.code ? cover.code : ""}">
+          <div class="slot-live"></div>
           <div class="slot-frame" aria-hidden="true"></div>
           <div class="code">${s.slot}</div>
           <img src="${img}" alt="${s.name || s.slot}">
@@ -223,6 +225,28 @@
     } else if (window.CabinetEditor.bindSlots) {
       window.CabinetEditor.bindSlots();
     }
+    mountSlotLives();
+  }
+
+  function clearSlotViews() {
+    slotViews.forEach((v) => { try { v.destroy(); } catch (e) {} });
+    slotViews.length = 0;
+  }
+
+  function mountSlotLives() {
+    clearSlotViews();
+    if (window.CabinetEditor && window.CabinetEditor.on) return;
+    document.querySelectorAll(".slot[data-cover]").forEach((el) => {
+      const code = el.dataset.cover;
+      const host = el.querySelector(".slot-live");
+      if (!code || !host) return;
+      api(`/api/cards/${code}`).then((spec) => {
+        if (!el.isConnected) return;
+        el.classList.add("has-live");
+        const cv = new CardView(host, Object.assign({}, spec, { mini: true, canSeeBack: false }));
+        slotViews.push(cv);
+      }).catch(() => {});
+    });
   }
 
   async function openSlot(cid) {
@@ -271,11 +295,35 @@
     $("#close-viewer").textContent = t("close");
     const hint = $("#viewer-hint");
     if (hint) hint.textContent = t("hint");
+    const link = $("#prop-collection");
+    const url = view.serialUrl || (me && me.site && me.site.serialCollectionUrl) || "";
+    if (link) {
+      if (url) {
+        link.href = url;
+        link.classList.remove("hidden");
+      } else {
+        link.classList.add("hidden");
+      }
+    }
   }
 
   function applySimple() {
     $("#overlay").classList.toggle("viewer-simple", !!view.simple);
     localStorage.setItem("cc-simple", view.simple ? "1" : "0");
+  }
+
+  function applyZoom() {
+    const card = $("#float-stage .float-card");
+    if (card) card.style.transform = `scale(${view.scale})`;
+  }
+
+  function maxZoom() {
+    const stage = $("#float-stage");
+    if (!stage) return 1.8;
+    const r = stage.getBoundingClientRect();
+    const capW = window.innerWidth * 0.92 / Math.max(r.width, 1);
+    const capH = window.innerHeight * 0.92 / Math.max(r.height, 1);
+    return Math.max(1, Math.min(capW, capH, 2.4));
   }
 
   async function selectCard(code) {
@@ -296,6 +344,9 @@
     stage.innerHTML = `<div class="card-root" id="live-card"></div>`;
     if (viewer) viewer.destroy();
     viewer = new CardView($("#live-card"), spec);
+    view.serialUrl = (spec.meta && spec.meta.serialUrl) || "";
+    view.scale = 1;
+    applyZoom();
     const faceBtns = document.querySelectorAll("#live-card [data-face]");
     faceBtns.forEach((b) => {
       if (b.dataset.face === "front") b.textContent = t("front");
@@ -304,13 +355,27 @@
   }
 
   function wireViewer() {
-    $("#btn-hide-info").onclick = () => {
+    const toggleProps = () => {
       const was = view.simple;
       pushUndo(() => { view.simple = was; applySimple(); refreshViewerChrome(); });
       view.simple = !view.simple;
       applySimple();
       refreshViewerChrome();
     };
+    $("#btn-hide-info").onclick = toggleProps;
+    const x = $("#btn-hide-info-x");
+    if (x) x.onclick = () => {
+      if (!view.simple) toggleProps();
+    };
+    const stage = $("#float-stage");
+    if (stage) {
+      stage.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const next = view.scale * (e.deltaY > 0 ? 0.94 : 1.06);
+        view.scale = Math.min(maxZoom(), Math.max(1, next));
+        applyZoom();
+      }, { passive: false });
+    }
     $("#btn-cover").onclick = async () => {
       if (!view.selected) return;
       const prevCover = (cabinet.slots.find((s) => s.characterId === view.cid) || {}).cover;
