@@ -20,19 +20,32 @@
   },
   "drops": {
     "2026-09-19": [
-      "S1-001-1"
+      "S1-001-1",
+      "S1-002-1"
     ]
   },
   "characters": [
     {
       "id": "001",
-      "name": "Alisa Mikhailovna Kujou",
+      "name": "Alisa Mikhailovna Kujou1",
       "cards": [
         {
           "n": 1,
           "code": "S1-001-1",
           "date": "2026-09-19",
           "title": "Alisa Mikhailovna Kujou"
+        }
+      ]
+    },
+    {
+      "id": "002",
+      "name": "Yuki Suou",
+      "cards": [
+        {
+          "n": 1,
+          "code": "S1-002-1",
+          "date": "2026-09-19",
+          "title": "Yuki Suou"
         }
       ]
     }
