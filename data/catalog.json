@@ -21,7 +21,8 @@
   "drops": {
     "2026-09-19": [
       "S1-001-1",
-      "S1-003-1"
+      "S1-003-1",
+      "S1-004-1"
     ]
   },
   "characters": [
@@ -46,6 +47,18 @@
           "code": "S1-003-1",
           "date": "2026-09-19",
           "title": "Marin Kitagawa"
+        }
+      ]
+    },
+    {
+      "id": "004",
+      "name": "Kana Arima",
+      "cards": [
+        {
+          "n": 1,
+          "code": "S1-004-1",
+          "date": "2026-09-19",
+          "title": "Kana Arima"
         }
       ]
     }
