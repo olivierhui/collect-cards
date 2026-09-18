@@ -46,15 +46,57 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
   position: absolute; right: 8px; bottom: 8px;
   background: rgba(0,0,0,.55); border-radius: 999px; padding: 2px 8px; font-size: 11px;
 }
-.slot.silver { box-shadow: inset 0 0 0 1px #b8c0cc; }
-.slot.gold { box-shadow: inset 0 0 0 1px #e8c36a; }
-.slot.prism { box-shadow: inset 0 0 0 1px #ffe9b8, 0 0 16px rgba(196,30,58,.25); }
+.slot.iron { box-shadow: inset 0 0 0 2px #6a6560; }
+.slot.silver { box-shadow: inset 0 0 0 2px #c5cdd8, 0 0 10px rgba(180,190,210,.25); }
+.slot.gold { box-shadow: inset 0 0 0 2px #e8c36a, 0 0 12px rgba(232,195,106,.28); }
+.slot.prism { box-shadow: inset 0 0 0 2px #ffe9b8, 0 0 16px rgba(196,30,58,.25); }
+.slot-frame {
+  position: absolute; inset: 6px; border-radius: 10px; pointer-events: none; z-index: 2;
+}
+.slot.silver .slot-frame { box-shadow: inset 0 0 0 1px rgba(197,205,216,.7); }
+.slot.gold .slot-frame { box-shadow: inset 0 0 0 1px rgba(232,195,106,.75); }
+.slot.prism .slot-frame { box-shadow: inset 0 0 0 1px rgba(255,233,184,.8), inset 0 0 12px rgba(196,30,58,.2); }
 
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: grid; place-items: center; z-index: 20; padding: 20px; }
 .overlay.hidden { display: none; }
 .viewer { width: min(1100px, 100%); display: grid; grid-template-columns: 1fr 280px; gap: 20px; background: #14110f; border: 1px solid #2e2a24; border-radius: 18px; padding: 18px; position: relative; }
-.close { position: absolute; right: 12px; top: 12px; }
+.overlay.viewer-simple .viewer { grid-template-columns: 1fr; width: min(720px, 100%); }
+.overlay.viewer-simple .viewer-side { display: none; }
+.viewer-main { position: relative; min-width: 0; }
+.close { position: absolute; right: 12px; top: 12px; z-index: 5; }
 .viewer-stage { min-height: 520px; display: grid; place-items: center; perspective: 1100px; }
+.viewer-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; }
+.viewer-strip.hidden { display: none; }
+.strip-card { padding: 4px; width: 72px; }
+.strip-card img { width: 64px; height: 86px; object-fit: cover; border-radius: 8px; display: block; }
+.strip-card span { display: block; font-size: 10px; margin-top: 4px; }
+.strip-card.on { outline: 2px solid var(--gold); }
+.cover-fab {
+  position: absolute; right: 12px; bottom: 12px; z-index: 6;
+  background: rgba(20,16,12,.88);
+}
+.lang-switch { display: inline-flex; gap: 2px; }
+.lang-btn { padding: 6px 8px; font-size: 11px; letter-spacing: 0.06em; }
+.lang-btn.active { background: var(--gold); color: #1a1408; border-color: var(--gold); }
+.who-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  border-radius: 999px; padding: 4px 12px 4px 10px;
+}
+.who-chip.iron { box-shadow: inset 0 0 0 1px #6a6560; }
+.who-chip.silver { box-shadow: inset 0 0 0 1px #c5cdd8; }
+.who-chip.gold { box-shadow: inset 0 0 0 1px #e8c36a; }
+.who-chip.prism { box-shadow: inset 0 0 0 1px #ffe9b8, 0 0 10px rgba(196,30,58,.25); }
+.who-name { font-weight: 600; }
+.who-tier { font-size: 11px; color: var(--gold); letter-spacing: 0.08em; }
+.who-pop {
+  position: fixed; z-index: 60; width: 260px;
+  background: #16141c; border: 1px solid #2e2a24; border-radius: 14px; padding: 14px;
+}
+.who-pop-name { font-family: "Noto Serif SC", serif; margin: 0 0 6px; }
+.holo-type-serial-link {
+  color: inherit; text-decoration: none; cursor: pointer;
+}
+.holo-back-sub { font-size: 11px; letter-spacing: 0.28em; opacity: 0.8; }
 .viewer-side h2 { font-family: "Noto Serif SC", serif; margin: 8px 0 4px; }
 .stack { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .stack button { padding: 6px 10px; }
@@ -417,3 +459,10 @@ body.editing .ed-block-off {
   border-radius: 16px; padding: 18px;
 }
 .hidden { display: none !important; }
+.zone-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.zone-card {
+  display: grid; grid-template-columns: 56px 1fr; gap: 10px;
+  background: #100e0c; border: 1px solid #2e2a24; border-radius: 12px; padding: 8px;
+}
+.zone-card img { width: 56px; height: 74px; object-fit: cover; border-radius: 6px; }
+.admin-sub { font-family: "Noto Serif SC", serif; font-size: 15px; margin: 16px 0 8px; }

@@ -1,9 +1,12 @@
 (function () {
   const $ = (s) => document.querySelector(s);
-  const FRAME = { silver: "银", gold: "金", prism: "幻彩" };
   let me = null;
   let cabinet = null;
   let viewer = null;
+  let view = { cid: null, cards: [], selected: null, simple: localStorage.getItem("cc-simple") === "1" };
+  const undo = [];
+
+  const TIER_FRAME = { t2: "iron", t3: "silver", t4: "gold", t5: "prism" };
 
   async function api(url, opts) {
     const r = await fetch(url, Object.assign({ headers: { "Content-Type": "application/json" } }, opts || {}));
@@ -12,65 +15,157 @@
     return data;
   }
 
+  function t(k, vars) {
+    return window.I18N ? I18N.t(k, vars) : k;
+  }
   function frameName(v) {
-    return FRAME[v] || "";
+    return window.I18N ? I18N.frameLabel(v) : v || "";
+  }
+  function tierLabel(tier) {
+    return window.I18N ? I18N.tierLabel(tier) : tier || "";
+  }
+
+  function extA(href, label, cls) {
+    return `<a class="${cls || "btn"}" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  }
+
+  function firstCard(slot) {
+    const cards = (slot.cards || []).slice().sort((a, b) => (a.n || 0) - (b.n || 0) || String(a.code).localeCompare(String(b.code)));
+    return cards[0] || slot.cover || null;
+  }
+
+  function pushUndo(fn) {
+    undo.push(fn);
+    if (undo.length > 40) undo.shift();
+  }
+
+  function doUndo() {
+    const fn = undo.pop();
+    if (fn) fn();
+  }
+
+  function renderLang() {
+    const cur = window.I18N ? I18N.lang() : "zh";
+    return `<span class="lang-switch">${["zh", "en", "ja"].map((L) =>
+      `<button type="button" class="lang-btn${cur === L ? " active" : ""}" data-lang="${L}">${L.toUpperCase()}</button>`
+    ).join("")}</span>`;
+  }
+
+  function bindLang() {
+    document.querySelectorAll(".lang-btn").forEach((b) => {
+      b.onclick = () => {
+        I18N.setLang(b.dataset.lang);
+        renderTop();
+        renderStatus();
+        renderCabinet();
+        applySite(me && me.site);
+        if (!$("#overlay").classList.contains("hidden") && view.cid) refreshViewerChrome();
+      };
+    });
   }
 
   function renderTop() {
     const box = $("#top-actions");
+    const lang = renderLang();
     if (!me || !me.user) {
       const mock = me && me.patreonReady ? "" : `
-        <a class="btn" href="/auth/mock?tier=t3">模拟 T3</a>
-        <a class="btn" href="/auth/mock?tier=t4">模拟 T4</a>
-        <a class="btn" href="/auth/mock?tier=t5">模拟 T5</a>
-        <a class="btn" href="/auth/mock?tier=none">模拟未订</a>`;
-      box.innerHTML = `
-        <a class="btn primary" href="${me && me.patreonReady ? "/auth/patreon" : "https://www.patreon.com"}">${me && me.patreonReady ? "Patreon 登录" : "去 Patreon"}</a>
-        ${mock}`;
+        <a class="btn" href="/auth/mock?tier=t2">${t("mock")} T2</a>
+        <a class="btn" href="/auth/mock?tier=t3">${t("mock")} T3</a>
+        <a class="btn" href="/auth/mock?tier=t4">${t("mock")} T4</a>
+        <a class="btn" href="/auth/mock?tier=t5">${t("mock")} T5</a>
+        <a class="btn" href="/auth/mock?tier=none">${t("mock")}</a>`;
+      const loginHref = me && me.patreonReady ? "/auth/patreon" : "https://www.patreon.com/18animegirls";
+      const login = me && me.patreonReady
+        ? `<a class="btn primary" href="${loginHref}">${t("login")}</a>`
+        : extA(loginHref, t("goPatreon"), "btn primary");
+      box.innerHTML = `${lang}${login}${mock}`;
+      bindLang();
       return;
     }
     const mockSwitch = me.user.mock
-      ? `<a class="btn" href="/auth/mock?tier=t3">模拟 T3</a>
-         <a class="btn" href="/auth/mock?tier=t4">模拟 T4</a>
-         <a class="btn" href="/auth/mock?tier=t5">模拟 T5</a>
-         <a class="btn" href="/auth/mock?tier=none">模拟未订</a>`
+      ? `<a class="btn" href="/auth/mock?tier=t2">${t("mock")} T2</a>
+         <a class="btn" href="/auth/mock?tier=t3">${t("mock")} T3</a>
+         <a class="btn" href="/auth/mock?tier=t4">${t("mock")} T4</a>
+         <a class="btn" href="/auth/mock?tier=t5">${t("mock")} T5</a>
+         <a class="btn" href="/auth/mock?tier=none">${t("mock")}</a>`
       : "";
-    const adminLink = me.user.creator || me.user.mock ? `<a class="btn" href="/admin">表单后台</a>` : "";
+    const adminLink = me.user.creator || me.user.mock ? `<a class="btn" href="/admin">${t("admin")}</a>` : "";
+    const tier = me.user.tier || "none";
+    const fr = TIER_FRAME[tier] || "";
     box.innerHTML = `
-      <span class="muted">${me.user.name}</span>
+      ${lang}
       ${adminLink}
       ${mockSwitch}
-      <button type="button" id="logout">退出</button>`;
+      <button type="button" class="who-chip ${fr}" id="who-chip">
+        <span class="who-name">${me.user.name || ""}</span>
+        <span class="who-tier">${tierLabel(tier)}</span>
+      </button>
+      <button type="button" id="logout">${t("logout")}</button>`;
+    bindLang();
     $("#logout").onclick = async () => {
       await api("/auth/logout", { method: "POST" });
       location.reload();
     };
+    $("#who-chip").onclick = (e) => {
+      e.stopPropagation();
+      toggleProfile();
+    };
+  }
+
+  function toggleProfile() {
+    let pop = $("#who-pop");
+    if (pop) {
+      pop.remove();
+      return;
+    }
+    const upgrade = (me.upgradeUrl || (me.site && me.site.upgradeUrl) || "https://www.patreon.com/18animegirls/membership");
+    pop = document.createElement("div");
+    pop.id = "who-pop";
+    pop.className = "who-pop";
+    pop.innerHTML = `
+      <p class="who-pop-name">${me.user.name || ""}</p>
+      <p class="muted tiny">${tierLabel(me.user.tier)} · ${t("profileCards", { n: me.user.ownedCount || 0 })} · ${t("profileSlots", { n: me.user.slotsFilled || 0 })}</p>
+      <p class="muted tiny">${me.user.created ? t("profileSince", { d: me.user.created }) : ""}</p>
+      ${extA(upgrade, t("upgrade"), "btn primary")}
+    `;
+    document.body.appendChild(pop);
+    const chip = $("#who-chip");
+    const r = chip.getBoundingClientRect();
+    pop.style.top = `${r.bottom + 8}px`;
+    pop.style.right = `${window.innerWidth - r.right}px`;
+    const close = (ev) => {
+      if (!pop.contains(ev.target) && ev.target !== chip) {
+        pop.remove();
+        document.removeEventListener("click", close);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", close), 0);
   }
 
   function renderStatus() {
     const bar = $("#status-bar");
     if (!me || !me.user) {
-      bar.innerHTML = `<p class="muted">登录后打开你的柜子。当天仍在订的会员，卡会自动出现，不用领取。</p>`;
+      bar.innerHTML = `<p class="muted">${t("statusGuest")}</p>`;
       return;
     }
     if (!me.user.paid) {
       const sub = me.subscribeUrl || "https://www.patreon.com/18animegirls";
-      const lab = me.subscribeLabel || "去 Patreon 订阅";
-      bar.innerHTML = `<p class="muted">现在不会发新卡。柜子里已有的还在。</p>
-        <a class="btn primary" href="${sub}">${lab}</a>`;
+      const lab = me.subscribeLabel || t("goPatreon");
+      bar.innerHTML = `<p class="muted">${t("statusUnpaid")}</p>${extA(sub, lab, "btn primary")}`;
       return;
     }
     const n = (me.todayDrops || []).length;
     const extra = me.user.mock
-      ? ` <button type="button" class="btn" id="bonus">测试续约补给</button>`
+      ? ` <button type="button" class="btn" id="bonus">${t("mock")}</button>`
       : "";
-    bar.innerHTML = `<p class="muted">${n ? `今天投放 ${n} 张，已按获得时的框入柜。` : "今天没有新投放。"} 升档不会改旧卡的框。</p>${extra}`;
+    const line = n ? t("statusToday", { n }) : t("statusNone");
+    bar.innerHTML = `<p class="muted">${line} ${t("statusKeep")}</p>${extra}`;
     const bonus = $("#bonus");
     if (bonus) {
       bonus.onclick = async () => {
         try {
           const r = await api("/api/dev/renewal-bonus", { method: "POST" });
-          const got = (r.granted || []).map((g) => g.code).join("、") || "没有空号可补";
+          const got = (r.granted || []).map((g) => g.code).join("、") || "—";
           alert(got);
           await boot();
         } catch (e) {
@@ -101,20 +196,22 @@
       .filter((s) => editing || !hiddenSlots.has(s.characterId))
       .map((s) => {
         const cover = s.cover;
-        const v = cover ? cover.variant : "";
+        const first = firstCard(s);
+        const v = first ? first.variant : "";
         const img = cover && cover.code ? `/api/assets/${cover.code}/original.png` : "";
         const hid = hiddenSlots.has(s.characterId) ? " ed-hidden-slot" : "";
         if (!s.owned) {
           return `<article class="slot empty${hid}" data-cid="${s.characterId}">
             <div class="code">${s.slot}</div>
-            <div class="empty-label">空位</div>
+            <div class="empty-label">${t("empty")}</div>
             <div class="ed-name-tag">${s.name || ""}</div>
           </article>`;
         }
         return `<article class="slot ${v}${hid}" data-cid="${s.characterId}">
+          <div class="slot-frame" aria-hidden="true"></div>
           <div class="code">${s.slot}</div>
           <img src="${img}" alt="${s.name || s.slot}">
-          <div class="count">已有 ${s.owned} 张</div>
+          <div class="count">${t("owned", { n: s.owned })}</div>
           <div class="ed-name-tag">${s.name || ""}</div>
         </article>`;
       })
@@ -131,42 +228,119 @@
   async function openSlot(cid) {
     const slot = cabinet.slots.find((s) => s.characterId === cid);
     if (!slot || !slot.owned) return;
-    const cover = slot.cover || slot.cards[0];
-    await showCard(cover);
-    const stack = $("#viewer-stack");
-    stack.innerHTML = slot.cards
-      .map((c) => {
-        const fr = frameName(c.variant);
-        return `<button type="button" data-code="${c.code}">${c.code}${fr ? " · " + fr : ""}</button>`;
-      })
-      .join("");
-    stack.querySelectorAll("button").forEach((b) => {
-      b.onclick = () => {
-        const card = slot.cards.find((c) => c.code === b.dataset.code);
-        showCard(card);
-      };
+    const prev = { ...view };
+    pushUndo(() => {
+      $("#overlay").classList.add("hidden");
+      if (viewer) { viewer.destroy(); viewer = null; }
+      view = prev;
     });
+    view.cid = cid;
+    view.cards = (slot.cards || []).slice().sort((a, b) => (a.n || 0) - (b.n || 0));
+    view.selected = slot.cover || view.cards[0];
     $("#overlay").classList.remove("hidden");
-    $("#viewer-title").textContent = slot.name || slot.slot;
+    applySimple();
+    await showCard(view.selected);
+    refreshViewerChrome();
+  }
+
+  function refreshViewerChrome() {
+    const slot = cabinet.slots.find((s) => s.characterId === view.cid);
+    $("#viewer-title").textContent = (slot && slot.name) || (view.selected && view.selected.code) || "";
+    const fr = view.selected ? frameName(view.selected.variant) : "";
+    $("#viewer-code").textContent = view.selected
+      ? `${view.selected.code}${fr ? " · " + fr : ""} · ${view.selected.claimedOn || view.selected.grantedOn || ""}`
+      : "";
+    const strip = $("#viewer-strip");
+    if (strip) {
+      strip.innerHTML = view.cards.map((c) => {
+        const on = view.selected && c.code === view.selected.code ? " on" : "";
+        return `<button type="button" class="strip-card${on}" data-code="${c.code}">
+          <img src="/api/assets/${c.code}/original.png" alt="${c.code}">
+          <span>${c.code}</span>
+        </button>`;
+      }).join("");
+      strip.querySelectorAll("button").forEach((b) => {
+        b.onclick = () => selectCard(b.dataset.code);
+      });
+      strip.classList.toggle("hidden", view.cards.length < 2);
+    }
+    $("#btn-hide-info").textContent = view.simple ? t("showInfo") : t("hideInfo");
+    $("#btn-cover").textContent = t("setCover");
+    $("#btn-phone").textContent = t("wallpaperPhone");
+    $("#btn-desk").textContent = t("wallpaperDesk");
+    $("#close-viewer").textContent = t("close");
+    const hint = $("#viewer-hint");
+    if (hint) hint.textContent = t("hint");
+  }
+
+  function applySimple() {
+    $("#overlay").classList.toggle("viewer-simple", !!view.simple);
+    localStorage.setItem("cc-simple", view.simple ? "1" : "0");
+  }
+
+  async function selectCard(code) {
+    const card = view.cards.find((c) => c.code === code);
+    if (!card) return;
+    const prev = view.selected;
+    pushUndo(() => {
+      if (prev) showCard(prev).then(refreshViewerChrome);
+    });
+    view.selected = card;
+    await showCard(card);
+    refreshViewerChrome();
   }
 
   async function showCard(card) {
     const spec = await api(`/api/cards/${card.code}`);
-    const fr = frameName(card.variant);
-    $("#viewer-code").textContent = `${card.code}${fr ? " · " + fr : ""} · ${card.claimedOn || card.grantedOn || ""}`;
     const stage = $("#viewer-stage");
     stage.innerHTML = `<div class="card-root" id="live-card"></div>`;
     if (viewer) viewer.destroy();
     viewer = new CardView($("#live-card"), spec);
+    const faceBtns = document.querySelectorAll("#live-card [data-face]");
+    faceBtns.forEach((b) => {
+      if (b.dataset.face === "front") b.textContent = t("front");
+      if (b.dataset.face === "back") b.textContent = t("back");
+    });
+  }
+
+  function wireViewer() {
+    $("#btn-hide-info").onclick = () => {
+      const was = view.simple;
+      pushUndo(() => { view.simple = was; applySimple(); refreshViewerChrome(); });
+      view.simple = !view.simple;
+      applySimple();
+      refreshViewerChrome();
+    };
     $("#btn-cover").onclick = async () => {
+      if (!view.selected) return;
+      const prevCover = (cabinet.slots.find((s) => s.characterId === view.cid) || {}).cover;
+      pushUndo(async () => {
+        if (prevCover) {
+          await api("/api/cover", { method: "POST", body: JSON.stringify({ characterId: view.cid, code: prevCover.code }) });
+          await boot();
+        }
+      });
       await api("/api/cover", {
         method: "POST",
-        body: JSON.stringify({ characterId: card.characterId, code: card.code }),
+        body: JSON.stringify({ characterId: view.selected.characterId, code: view.selected.code }),
       });
       await boot();
+      if (view.cid) {
+        $("#overlay").classList.remove("hidden");
+        applySimple();
+        refreshViewerChrome();
+      }
     };
-    $("#btn-phone").onclick = () => wallpaper(1080, 1920, spec);
-    $("#btn-desk").onclick = () => wallpaper(1920, 1080, spec);
+    $("#btn-phone").onclick = () => {
+      if (viewer) wallpaper(1080, 1920, { files: { "original.png": `/api/assets/${view.selected.code}/original.png` }, card: view.selected });
+    };
+    $("#btn-desk").onclick = () => {
+      if (view.selected) wallpaper(1920, 1080, { files: { "original.png": `/api/assets/${view.selected.code}/original.png` }, card: view.selected });
+    };
+    $("#close-viewer").onclick = () => {
+      $("#overlay").classList.add("hidden");
+      if (viewer) { viewer.destroy(); viewer = null; }
+    };
   }
 
   async function wallpaper(w, h, spec) {
@@ -196,11 +370,12 @@
     }, "image/png");
   }
 
-  $("#close-viewer").onclick = () => {
-    $("#overlay").classList.add("hidden");
-    if (viewer) viewer.destroy();
-    viewer = null;
-  };
+  document.addEventListener("contextmenu", (e) => {
+    if ($("#overlay") && !$("#overlay").classList.contains("hidden")) {
+      e.preventDefault();
+      doUndo();
+    }
+  });
 
   function applySite(site) {
     if (!site) return;
@@ -228,6 +403,7 @@
   }
 
   async function boot() {
+    if (window.I18N) I18N.setLang(I18N.lang());
     me = await api("/api/me");
     applySite(me.site);
     renderTop();
@@ -254,6 +430,7 @@
     applySite,
   };
 
+  wireViewer();
   boot().catch((e) => {
     $("#status-bar").textContent = e.message;
   });

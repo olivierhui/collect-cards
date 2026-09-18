@@ -6,7 +6,7 @@
   <title>柜子后台</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=admin" />
+  <link rel="stylesheet" href="/static/styles.css?v=cabinet12" />
 </head>
 <body class="admin-body">
   <header class="top">
@@ -15,29 +15,61 @@
       <h1>柜子后台</h1>
     </div>
     <div class="top-actions">
-      <a class="btn" href="/">看网站</a>
+      <a class="btn" href="/" target="_blank" rel="noopener">看网站</a>
       <button type="button" id="logout">退出</button>
     </div>
   </header>
-  <p class="admin-note" id="note">改完点保存。网站立刻变。有 GitHub 钥匙时还会备份到仓库。投放错了、拖格子、改标题：到展示页点右下角「编辑页面」，比这个表单更自由。</p>
+  <p class="admin-note" id="note">文字、投放、待放区、粉丝在这里改。展示页右下角「编辑页面」可以拖格子。卡面扫光/眼睛/胸部不要在这里动。</p>
 
   <section class="admin-card">
-    <h2>网站文字</h2>
+    <h2>网站文字与链接</h2>
     <label>页眉小字 <input id="kicker" /></label>
     <label>大标题 <input id="title" /></label>
     <label>未登录说明 <textarea id="gate" rows="3"></textarea></label>
     <label>订阅按钮文字 <input id="subscribeLabel" /></label>
     <label>订阅链接 <input id="subscribeUrl" /></label>
+    <label>升级 Patreon 等级链接 <input id="upgradeUrl" placeholder="https://www.patreon.com/.../membership" /></label>
+    <label>编号默认集合链接（框上编号可点，样子不变） <input id="serialCollectionUrl" /></label>
     <label>浏览器标题 <input id="pageTitle" /></label>
     <label>季名 <input id="seasonTitle" /></label>
     <label>格子数 <input id="slots" type="number" min="1" max="100" /></label>
   </section>
 
   <section class="admin-card">
+    <h2>激活区</h2>
+    <p class="muted tiny">已进入投放名单的卡。可以改到待放区，或删除。</p>
+    <div id="zone-active" class="zone-grid"></div>
+  </section>
+
+  <section class="admin-card">
+    <h2>待放区</h2>
+    <p class="muted tiny">上传错了、还没想发的卡放这里。不会自动入柜。</p>
+    <div id="zone-pending" class="zone-grid"></div>
+  </section>
+
+  <section class="admin-card">
     <h2>当天投放</h2>
-    <p class="muted tiny">一行一天。编号用逗号分开，例如 S1-001-1, S1-002-1</p>
+    <p class="muted tiny">一行一天。编号用逗号分开。</p>
     <div id="drops"></div>
     <button type="button" id="add-drop">加一天</button>
+  </section>
+
+  <section class="admin-card">
+    <h2>正面 / 背面文字</h2>
+    <p class="muted tiny">只改字。深度、扫光、眼睛、胸部全部不动。</p>
+    <label>编号 <input id="txt-code" placeholder="S1-001-1" /></label>
+    <button type="button" id="txt-load">读出这张</button>
+    <label>角色名 <input id="txt-name" /></label>
+    <label>正面品牌 <input id="txt-brand" /></label>
+    <label>正面编号 <input id="txt-serial" /></label>
+    <label>编号链接（Patreon 集合） <input id="txt-serialUrl" /></label>
+    <label>日期 <input id="txt-date" /></label>
+    <label>版本字 <input id="txt-edition" /></label>
+    <label>背面小字（个人典藏） <input id="txt-backKicker" /></label>
+    <label>背面大字（18 / S / SS / SSS） <input id="txt-backMark" /></label>
+    <label>背面品牌（ANIME GIRLS） <input id="txt-backBrand" /></label>
+    <label>背面第二行（18 ANIME GIRLS） <input id="txt-backSub" /></label>
+    <button type="button" class="primary" id="txt-save">只保存文字</button>
   </section>
 
   <section class="admin-card">
@@ -46,17 +78,31 @@
   </section>
 
   <section class="admin-card">
+    <h2>粉丝</h2>
+    <p class="muted tiny">谁有几张、这张卡在谁柜里。</p>
+    <div id="fans-users"></div>
+    <h3 class="admin-sub">按卡</h3>
+    <div id="fans-cards"></div>
+  </section>
+
+  <section class="admin-card">
     <h2>上传一张卡</h2>
-    <p class="muted tiny">工作室导出的 ZIP。编号必须是 S1-001-1 这种。</p>
+    <p class="muted tiny">工作室 ZIP。编号必须是 S1-001-1。</p>
     <label>投放日 <input id="zip-date" type="date" /></label>
+    <label>放去
+      <select id="zip-zone">
+        <option value="active">激活区（当天投放）</option>
+        <option value="pending">待放区</option>
+      </select>
+    </label>
     <input id="zip-file" type="file" accept=".zip" />
-    <button type="button" id="upload">上传并放入当天名单</button>
+    <button type="button" id="upload">上传</button>
   </section>
 
   <div class="admin-save">
-    <button type="button" class="primary" id="save">保存，更新网站</button>
+    <button type="button" class="primary" id="save">保存网站文字与投放</button>
     <span class="muted" id="status"></span>
   </div>
-  <script src="/static/admin.js?v=1"></script>
+  <script src="/static/admin.js?v=cabinet12"></script>
 </body>
 </html>

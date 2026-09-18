@@ -41,6 +41,8 @@ SITE_DEFAULT = {
     "subscribeLabel": "去 Patreon 订阅",
     "pageTitle": "收集卡系列 · 展示柜",
     "note": "",
+    "upgradeUrl": "https://www.patreon.com/18animegirls/membership",
+    "serialCollectionUrl": "",
     "layout": {
         "slotOrder": [],
         "hiddenSlots": [],
@@ -68,6 +70,11 @@ def _write(path: Path, payload: Any) -> None:
 
 def paid_tier(tier: str | None) -> bool:
     return tier in PAID_TIERS
+
+
+def pending_set(raw: dict[str, Any] | None = None) -> set[str]:
+    src = raw if isinstance(raw, dict) else _read(CATALOG, {})
+    return set(as_code_list(src.get("pending")))
 
 
 def as_code_list(mapped: Any) -> list[str]:
@@ -160,6 +167,7 @@ def catalog() -> dict[str, Any]:
                 }
             )
     raw["characters"] = sorted(chars.values(), key=lambda c: c["id"])
+    raw["_pending"] = as_code_list(raw.get("pending"))
     raw["_drops"] = _merged_drops(raw, chars)
     return raw
 
@@ -167,9 +175,12 @@ def catalog() -> dict[str, Any]:
 def _merged_drops(raw: dict[str, Any], chars: dict[str, dict[str, Any]]) -> dict[str, list[str]]:
     """catalog.drops + 每张卡的 date / meta.date。手写 drops 优先顺序，日期仍必须有来源。"""
     out: dict[str, list[str]] = {}
+    parked = pending_set(raw)
     for day, val in (raw.get("drops") or {}).items():
         day = str(day)
         for code in as_code_list(val):
+            if code in parked:
+                continue
             bucket = out.setdefault(day, [])
             if code not in bucket:
                 bucket.append(code)
@@ -178,6 +189,8 @@ def _merged_drops(raw: dict[str, Any], chars: dict[str, dict[str, Any]]) -> dict
             day = (card.get("date") or "").strip()
             code = card.get("code")
             if not day or not code:
+                continue
+            if code in pending_set(raw):
                 continue
             bucket = out.setdefault(day, [])
             if code not in bucket:
@@ -673,6 +686,8 @@ def register_drop(code: str, day: str, name: str = "", title: str = "") -> dict[
     if code not in existing:
         existing.append(code)
     drops[day] = existing
+    parked = [c for c in as_code_list(raw.get("pending")) if c != code]
+    raw["pending"] = parked
     chars = raw.setdefault("characters", [])
     ch = next((c for c in chars if str(c.get("id") or "").zfill(3) == cid), None)
     if not ch:
@@ -938,4 +953,174 @@ def fix_drop(
         "recalled": recalled,
         "granted": granted,
         "drops": catalog().get("_drops") or {},
+    }
+
+
+TEXT_KEYS = (
+    "name",
+    "brand",
+    "serial",
+    "date",
+    "edition",
+    "serialUrl",
+    "backKicker",
+    "backMark",
+    "backBrand",
+    "backSub",
+)
+
+
+def read_card_text(code: str) -> dict[str, Any]:
+    code = (code or "").strip()
+    if not FOLDER_RE.match(code):
+        raise ValueError("编号必须是 S1-001-1 这种")
+    folder = card_dir(code)
+    mp = folder / "meta.json"
+    meta: dict[str, Any] = {}
+    if mp.is_file():
+        try:
+            meta = json.loads(mp.read_text(encoding="utf-8"))
+        except Exception:
+            meta = {}
+    if not isinstance(meta, dict):
+        meta = {}
+    return {"ok": True, "code": code, "text": {k: meta.get(k, "") for k in TEXT_KEYS}}
+
+
+def save_card_text(code: str, fields: dict[str, Any]) -> dict[str, Any]:
+    """Update only face/back copy. Never touch FX (depth/glow/foil/eyes/chest)."""
+    code = (code or "").strip()
+    if not FOLDER_RE.match(code):
+        raise ValueError("编号必须是 S1-001-1 这种")
+    folder = card_dir(code)
+    mp = folder / "meta.json"
+    meta: dict[str, Any] = {}
+    if mp.is_file():
+        try:
+            meta = json.loads(mp.read_text(encoding="utf-8"))
+        except Exception:
+            meta = {}
+    if not isinstance(meta, dict):
+        meta = {}
+    for key in TEXT_KEYS:
+        if key in fields and fields[key] is not None:
+            meta[key] = str(fields[key]).strip()
+    mp.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    if meta.get("name") or meta.get("date"):
+        raw = catalog_raw()
+        _touch_character_card(raw, code, meta.get("date") if "date" in fields else None, meta.get("name") or "")
+        _write(CATALOG, raw)
+    return {"ok": True, "code": code, "text": {k: meta.get(k, "") for k in TEXT_KEYS}}
+
+
+def set_card_zone(code: str, zone: str, *, delete: bool = False, recall: bool = False) -> dict[str, Any]:
+    """active = live drops; pending = 待放区; delete = remove files."""
+    code = (code or "").strip()
+    if not FOLDER_RE.match(code):
+        raise ValueError("编号必须是 S1-001-1 这种")
+    zone = (zone or "pending").strip()
+    raw = catalog_raw()
+    parked = as_code_list(raw.get("pending"))
+    drops = raw.setdefault("drops", {})
+    recalled = 0
+    if delete:
+        if recall:
+            recalled = recall_code(code)
+        parked = [c for c in parked if c != code]
+        for d, val in list(drops.items()):
+            lst = [c for c in as_code_list(val) if c != code]
+            if lst:
+                drops[d] = lst
+            else:
+                drops.pop(d, None)
+        for ch in raw.get("characters") or []:
+            ch["cards"] = [c for c in (ch.get("cards") or []) if c.get("code") != code]
+        raw["characters"] = [ch for ch in (raw.get("characters") or []) if ch.get("cards")]
+        raw["pending"] = parked
+        raw["drops"] = drops
+        _write(CATALOG, raw)
+        folder = card_dir(code)
+        if folder.is_dir():
+            import shutil
+
+            shutil.rmtree(folder, ignore_errors=True)
+        return {"ok": True, "code": code, "zone": "deleted", "recalled": recalled}
+
+    if zone == "pending":
+        if code not in parked:
+            parked.append(code)
+        for d, val in list(drops.items()):
+            lst = [c for c in as_code_list(val) if c != code]
+            if lst:
+                drops[d] = lst
+            else:
+                drops.pop(d, None)
+        _touch_character_card(raw, code, "")
+        _write_card_date(code, "")
+        raw["pending"] = parked
+        raw["drops"] = drops
+        _write(CATALOG, raw)
+        return {"ok": True, "code": code, "zone": "pending"}
+
+    if zone == "active":
+        parked = [c for c in parked if c != code]
+        raw["pending"] = parked
+        _write(CATALOG, raw)
+        day = today_str()
+        register_drop(code, day)
+        return {"ok": True, "code": code, "zone": "active", "date": day}
+    raise ValueError("zone 只能是 active / pending")
+
+
+def fan_stats() -> dict[str, Any]:
+    all_u = users()
+    by_card: dict[str, list[dict[str, Any]]] = {}
+    by_user: list[dict[str, Any]] = []
+    for pid, days in inventory().items():
+        u = all_u.get(pid) or {}
+        codes: list[str] = []
+        seen: set[str] = set()
+        for day, grants in (days or {}).items():
+            for g in as_grant_list(grants):
+                code = g.get("code")
+                if not code:
+                    continue
+                by_card.setdefault(code, []).append(
+                    {
+                        "pid": pid,
+                        "name": u.get("name") or pid,
+                        "tier": u.get("tier"),
+                        "variant": g.get("variant"),
+                        "day": g.get("day") or day,
+                    }
+                )
+                if code not in seen:
+                    seen.add(code)
+                    codes.append(code)
+        by_user.append(
+            {
+                "pid": pid,
+                "name": u.get("name") or pid,
+                "tier": u.get("tier"),
+                "count": len(codes),
+                "codes": codes,
+                "seen": u.get("seen") or "",
+                "created": u.get("created") or "",
+            }
+        )
+    by_user.sort(key=lambda x: (-x["count"], x["name"]))
+    return {"byCard": by_card, "byUser": by_user}
+
+
+def user_public(pid: str) -> dict[str, Any]:
+    u = users().get(pid) or {}
+    owned = owned_cards(pid)
+    return {
+        "name": u.get("name") or "",
+        "tier": u.get("tier"),
+        "paid": paid_tier(u.get("tier")),
+        "created": u.get("created") or "",
+        "seen": u.get("seen") or "",
+        "ownedCount": len(owned),
+        "slotsFilled": len({c.get("characterId") for c in owned if c.get("characterId")}),
     }

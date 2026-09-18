@@ -89,10 +89,13 @@ async def me(request: Request):
         "user": {
             "id": user["id"],
             "name": user.get("name"),
+            "tier": user.get("tier"),
             "paid": store.paid_tier(user.get("tier")),
             "creator": bool(user.get("creator")),
             "mock": str(user.get("id") or "").startswith("mock-"),
+            **store.user_public(user["id"]),
         },
+        "upgradeUrl": store.site().get("upgradeUrl") or "https://www.patreon.com/18animegirls/membership",
         "today": store.today_str(),
         "todayDrops": store.drops_for_date(store.today_str()),
         "patreonReady": patreon.configured(),
@@ -130,8 +133,8 @@ async def auth_callback(request: Request, code: str = "", state: str = ""):
 async def auth_mock(request: Request, tier: str = "t3", name: str = "测试会员"):
     if patreon.configured() and not os.getenv("ALLOW_MOCK"):
         raise HTTPException(400, "已接 Patreon，关闭模拟登录")
-    if tier not in {"t3", "t4", "t5", "none"}:
-        raise HTTPException(400, "tier 只能是 t3/t4/t5/none")
+    if tier not in {"t2", "t3", "t4", "t5", "none"}:
+        raise HTTPException(400, "tier 只能是 t2/t3/t4/t5/none")
     pid = request.session.get("pid") or f"mock-{secrets.token_hex(4)}"
     login_and_grant(request, pid, name, None if tier == "none" else tier)
     return RedirectResponse("/")
@@ -316,7 +319,54 @@ async def admin_library(request: Request):
                 "holders": len(store.holders_of(card["code"])),
             }
         )
-    return {"ok": True, "today": store.today_str(), "cards": items}
+    pending = set(store.pending_set())
+    for it in items:
+        it["zone"] = "pending" if it["code"] in pending else "active"
+    return {"ok": True, "today": store.today_str(), "cards": items, "pending": list(pending)}
+
+
+@app.get("/api/admin/card-text")
+async def admin_card_text_get(request: Request, code: str = ""):
+    require_creator(request)
+    try:
+        return store.read_card_text(code)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/admin/card-text")
+async def admin_card_text(request: Request):
+    require_creator(request)
+    body = await request.json()
+    try:
+        rec = store.save_card_text(str(body.get("code") or ""), body)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    await github_sync.push_data_files(f"admin: card text {rec.get('code')}")
+    return rec
+
+
+@app.post("/api/admin/zone")
+async def admin_zone(request: Request):
+    require_creator(request)
+    body = await request.json()
+    try:
+        rec = store.set_card_zone(
+            str(body.get("code") or ""),
+            str(body.get("zone") or "pending"),
+            delete=bool(body.get("delete")),
+            recall=bool(body.get("recall")),
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    await github_sync.push_data_files(f"admin: zone {rec.get('code')} {rec.get('zone')}")
+    return rec
+
+
+@app.get("/api/admin/fans")
+async def admin_fans(request: Request):
+    require_creator(request)
+    return {"ok": True, **store.fan_stats()}
 
 
 @app.get("/api/admin/assets/{code}/{filename}")
@@ -335,6 +385,7 @@ async def admin_card_zip(
     request: Request,
     file: UploadFile = File(...),
     date: str = Form(""),
+    zone: str = Form("active"),
 ):
     require_creator(request)
     day = (date or "").strip() or store.today_str()
@@ -371,11 +422,17 @@ async def admin_card_zip(
         for src in folder.glob("extra_*.png"):
             shutil.copy2(src, dest / src.name)
         meta["serial"] = code
+        if (zone or "active").strip() == "pending":
+            meta["date"] = ""
+            (dest / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+            store.set_card_zone(code, "pending")
+            await github_sync.push_data_files(f"admin: pending {code}")
+            return {"ok": True, "code": code, "zone": "pending"}
         meta["date"] = day
         (dest / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
         store.register_drop(code, day, meta.get("name") or "", meta.get("name") or "")
         await github_sync.push_data_files(f"admin: add card {code}")
-        return {"ok": True, "code": code, "date": day}
+        return {"ok": True, "code": code, "date": day, "zone": "active"}
     finally:
         shutil.rmtree(root_tmp, ignore_errors=True)
 

@@ -120,9 +120,10 @@
           <svg class="holo-filigree bl" viewBox="0 0 86 86"><use href="#filigree-corner"/></svg>
           <svg class="holo-filigree br" viewBox="0 0 86 86"><use href="#filigree-corner"/></svg>
           <div class="holo-back-inner">
-            <div class="holo-back-kicker">个人典藏</div>
-            <div class="holo-back-mono">18</div>
-            <div class="holo-back-brand">ANIME GIRLS</div>
+            <div class="holo-back-kicker"></div>
+            <div class="holo-back-mono"></div>
+            <div class="holo-back-brand"></div>
+            <div class="holo-back-sub"></div>
             <div class="holo-back-rule"></div>
             <div class="holo-back-edition"></div>
             <div class="holo-back-serial"></div>
@@ -177,8 +178,26 @@
     setTxt(".holo-type-name", name);
     setTxt(".holo-type-edition", this.meta.edition || "");
     setTxt(".holo-type-date", this.meta.date || "");
+    setTxt(".holo-back-kicker", this.meta.backKicker || "个人典藏");
+    setTxt(".holo-back-mono", this.meta.backMark || "18");
+    setTxt(".holo-back-brand", this.meta.backBrand || "ANIME GIRLS");
+    setTxt(".holo-back-sub", this.meta.backSub || "");
     setTxt(".holo-back-edition", this.meta.edition || "");
     setTxt(".holo-back-serial", serial);
+    const serEl = this.root.querySelector(".holo-type-serial");
+    const siteUrl = (window.__cabinet && window.__cabinet.me && window.__cabinet.me.site && window.__cabinet.me.site.serialCollectionUrl) || "";
+    const url = (this.meta.serialUrl || siteUrl || "").trim();
+    if (serEl && url && serial) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.className = "holo-type-serial-link";
+      a.textContent = serial;
+      serEl.textContent = "";
+      serEl.appendChild(a);
+      serEl.style.display = "";
+    }
   };
 
   CardView.prototype.load = function () {
