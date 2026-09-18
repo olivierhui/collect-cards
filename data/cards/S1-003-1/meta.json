@@ -7,31 +7,20 @@
     "主体由 rembg/birefnet-general 抠出。"
   ],
   "extras": [],
-  "name": "Yuki Suou",
+  "name": "Marin Kitagawa",
   "brand": "18animegirls",
-  "serial": "S1-002-1",
+  "serial": "S1-003-1",
   "date": "2026-09-19",
   "edition": "",
   "grade": "prism",
   "eyes": [],
-  "chest": [
-    {
-      "x": 0.48380829782637774,
-      "y": 0.39368653807657883,
-      "r": 0.11301843292893302
-    },
-    {
-      "x": 0.6695978085682748,
-      "y": 0.48147947883918674,
-      "r": 0.11301843292893302
-    }
-  ],
+  "chest": [],
   "depth": 29,
   "glow": 45,
   "foil": 58,
   "foilStyle": "gold",
   "foilTarget": "bg",
-  "tilt": true,
+  "tilt": false,
   "float": true,
   "gaze": false,
   "serialUrl": "",

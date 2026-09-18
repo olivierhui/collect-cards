@@ -21,13 +21,13 @@
   "drops": {
     "2026-09-19": [
       "S1-001-1",
-      "S1-002-1"
+      "S1-003-1"
     ]
   },
   "characters": [
     {
       "id": "001",
-      "name": "Alisa Mikhailovna Kujou1",
+      "name": "Alisa Mikhailovna Kujou",
       "cards": [
         {
           "n": 1,
@@ -38,14 +38,14 @@
       ]
     },
     {
-      "id": "002",
-      "name": "Yuki Suou",
+      "id": "003",
+      "name": "Marin Kitagawa",
       "cards": [
         {
           "n": 1,
-          "code": "S1-002-1",
+          "code": "S1-003-1",
           "date": "2026-09-19",
-          "title": "Yuki Suou"
+          "title": "Marin Kitagawa"
         }
       ]
     }
