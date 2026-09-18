@@ -38,7 +38,18 @@ def current_user(request: Request) -> dict | None:
     pid = request.session.get("pid")
     if not pid:
         return None
-    return store.users().get(pid)
+    user = store.users().get(pid)
+    if user:
+        return user
+    # Render redeploy wipes users.json (gitignored). Rebuild from session cookie.
+    if any(k in request.session for k in ("name", "tier", "creator")):
+        return store.upsert_user(
+            pid,
+            request.session.get("name") or "Patron",
+            request.session.get("tier"),
+            creator=bool(request.session.get("creator")),
+        )
+    return None
 
 
 def require_creator(request: Request) -> dict:
@@ -55,6 +66,9 @@ def login_and_grant(
 ) -> None:
     store.upsert_user(pid, name, tier, creator=creator)
     request.session["pid"] = pid
+    request.session["name"] = name
+    request.session["tier"] = tier
+    request.session["creator"] = bool(creator)
     store.ensure_entitlements(pid)
 
 
