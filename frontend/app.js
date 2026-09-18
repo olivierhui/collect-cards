@@ -412,7 +412,8 @@
     const hint = $("#viewer-hint");
     const site = (me && me.site) || {};
     if (hint) hint.textContent = site.hint || t("hint");
-    const url = view.serialUrl || site.serialCollectionUrl || "";
+    // Per-card collection / Patreon post link only (no site-wide fallback; no overlay chip).
+    const url = (view.serialUrl || "").trim();
     const label = site.collectionLabel || "打开 Patreon 帖子";
     const link = $("#prop-collection");
     if (link) {
@@ -421,17 +422,8 @@
         link.href = url;
         link.classList.remove("hidden");
       } else {
+        link.removeAttribute("href");
         link.classList.add("hidden");
-      }
-    }
-    const chip = $("#btn-patreon-post");
-    if (chip) {
-      chip.textContent = label;
-      if (url && mods.propCollection !== false) {
-        chip.href = url;
-        chip.classList.remove("hidden");
-      } else {
-        chip.classList.add("hidden");
       }
     }
   }

@@ -122,7 +122,6 @@
     $("#subscribeLabel").value = site.subscribeLabel || "";
     $("#subscribeUrl").value = site.subscribeUrl || "";
     $("#upgradeUrl").value = site.upgradeUrl || "";
-    $("#serialCollectionUrl").value = site.serialCollectionUrl || "";
     $("#pageTitle").value = site.pageTitle || "";
     $("#seasonTitle").value = data.seasonTitle || "";
     $("#slots").value = data.slots || 24;
@@ -168,7 +167,6 @@
         subscribeLabel: $("#subscribeLabel").value,
         subscribeUrl: $("#subscribeUrl").value,
         upgradeUrl: $("#upgradeUrl").value,
-        serialCollectionUrl: $("#serialCollectionUrl").value,
         pageTitle: $("#pageTitle").value,
       },
       seasonTitle: $("#seasonTitle").value,
