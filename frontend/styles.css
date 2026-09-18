@@ -40,6 +40,12 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
   cursor: pointer;
 }
 .slot.empty { cursor: default; overflow: hidden; }
+.slot.has-live,
+.slot:not(.empty) {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
 .slot .code { position: absolute; top: 10px; left: 10px; font-size: 11px; letter-spacing: 0.12em; color: #cbb58a; z-index: 4; }
 .slot .empty-label { position: absolute; inset: 0; display: grid; place-items: center; color: #5c564c; font-size: 13px; }
 .slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; }
@@ -51,37 +57,34 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
 .slot.silver { --fx: #c5cdd8; --fx2: #f4f7fb; }
 .slot.gold { --fx: #d4af37; --fx2: #fff1b8; }
 .slot.prism { --fx: #e8c36a; --fx2: #fff4dc; }
-.slot:not(.empty) {
-  border-color: color-mix(in srgb, var(--fx) 45%, #2e2a24);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--fx) 40%, transparent),
-    0 0 10px color-mix(in srgb, var(--fx) 42%, transparent),
-    0 0 22px color-mix(in srgb, var(--fx) 22%, transparent);
-}
-.slot.prism:not(.empty) {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--fx2) 50%, transparent),
-    0 0 10px color-mix(in srgb, var(--fx) 45%, transparent),
-    0 0 18px rgba(196, 30, 58, 0.28),
-    0 0 28px rgba(46, 132, 110, 0.18);
-}
 .slot-frame {
   position: absolute;
-  inset: 11px;
-  border-radius: 11px;
+  inset: 0;
+  border-radius: 16px;
   pointer-events: none;
   z-index: 3;
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--fx2) 42%, transparent),
-    inset 0 0 14px color-mix(in srgb, var(--fx) 32%, transparent),
-    0 0 8px color-mix(in srgb, var(--fx) 28%, transparent);
+    inset 0 0 0 1.2px color-mix(in srgb, var(--fx2) 70%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--fx) 45%, transparent);
 }
 .slot.prism .slot-frame {
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--fx2) 55%, transparent),
-    inset 0 0 12px rgba(196, 30, 58, 0.22),
-    0 0 8px color-mix(in srgb, var(--fx) 35%, transparent),
-    0 0 14px rgba(46, 132, 110, 0.16);
+    inset 0 0 0 1.2px color-mix(in srgb, var(--fx2) 80%, transparent),
+    inset 0 0 16px rgba(196, 30, 58, 0.35),
+    inset 0 0 28px rgba(46, 132, 110, 0.22);
+}
+.slot .holo-card-wrap.is-mini {
+  filter:
+    drop-shadow(0 0 4px var(--fx2))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--fx) 88%, transparent))
+    drop-shadow(0 0 28px color-mix(in srgb, var(--fx) 55%, transparent));
+}
+.slot.prism .holo-card-wrap.is-mini {
+  filter:
+    drop-shadow(0 0 4px #fff4dc)
+    drop-shadow(0 0 12px #e8c36a)
+    drop-shadow(0 0 22px rgba(196, 30, 58, 0.7))
+    drop-shadow(0 0 32px rgba(46, 132, 110, 0.45));
 }
 
 .overlay {
