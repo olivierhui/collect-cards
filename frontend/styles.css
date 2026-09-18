@@ -115,13 +115,34 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
   position: absolute; right: 8px; bottom: 8px; z-index: 6;
   background: rgba(20,16,12,.88);
 }
-.slot-live { position: absolute; inset: 0; z-index: 1; }
-.slot-live .holo-card-wrap,
-.slot-live .card-root.holo-card {
-  width: 100%; height: 100%; max-width: none; border-radius: 14px;
+.slot-live,
+.slot .holo-card-wrap.is-mini {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+.slot .holo-card-wrap.is-mini {
+  left: 50%;
+  top: 50%;
+  width: 380px;
+  aspect-ratio: 3 / 4;
+  height: auto;
+  gap: 0;
+  display: block;
+  overflow: hidden;
+  border-radius: 16px;
+  transform: translate(-50%, -50%) scale(var(--mini-s, 0.42));
+  transform-origin: center center;
+}
+.slot .holo-card-wrap.is-mini .card-root.holo-card {
+  width: 380px;
+  max-width: none;
+  height: 100%;
+  border-radius: 16px;
 }
 .slot > img { position: relative; z-index: 0; }
-.slot.has-live > img { opacity: 0; }
+.slot.has-live > img,
+.slot.has-live > .code { opacity: 0; }
 .lang-switch { display: inline-flex; gap: 2px; }
 .lang-btn { padding: 6px 8px; font-size: 11px; letter-spacing: 0.06em; }
 .lang-btn.active { background: var(--gold); color: #1a1408; border-color: var(--gold); }

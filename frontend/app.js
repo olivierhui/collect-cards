@@ -245,6 +245,13 @@
         el.classList.add("has-live");
         const cv = new CardView(host, Object.assign({}, spec, { mini: true, canSeeBack: false }));
         slotViews.push(cv);
+        const fit = () => cv.fitMini && cv.fitMini();
+        fit();
+        if (window.ResizeObserver) {
+          const ro = new ResizeObserver(fit);
+          ro.observe(el);
+          cv._ro = ro;
+        }
       }).catch(() => {});
     });
   }

@@ -69,6 +69,7 @@
     this.render();
     this.bind();
     this.load();
+    if (this.mini) this.fitMini();
     const loop = (t) => {
       this.tick(t);
       this.raf = requestAnimationFrame(loop);
@@ -80,7 +81,7 @@
     const v = this.card.variant || this.meta.grade || "gold";
     const foil = this.meta.foilStyle || "rainbow";
     const foilTarget = this.meta.foilTarget || "all";
-    this.root.className = "holo-card-wrap";
+    this.root.className = this.mini ? "slot-live holo-card-wrap is-mini" : "holo-card-wrap";
     this.root.innerHTML = `
       <div class="card-root holo-card" data-grade="${v}" data-foil="${foil}" data-foil-target="${foilTarget}" data-flipped="0">
       <div class="holo-flipper">
@@ -491,8 +492,19 @@
     ctx.putImageData(dst, x0, y0);
   }
 
+  CardView.prototype.fitMini = function () {
+    const slot = this.root.closest(".slot");
+    if (!slot) return;
+    const w = slot.clientWidth || 160;
+    this.root.style.setProperty("--mini-s", String(w / 380));
+  };
+
   CardView.prototype.destroy = function () {
     cancelAnimationFrame(this.raf);
+    if (this._ro) {
+      try { this._ro.disconnect(); } catch (e) {}
+      this._ro = null;
+    }
     this.root.innerHTML = "";
   };
 
