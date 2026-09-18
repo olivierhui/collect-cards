@@ -470,11 +470,24 @@
   }
 
   async function showCard(card) {
-    const spec = await api(`/api/cards/${card.code}`);
     const stage = $("#viewer-stage");
+    if (!stage || !card) return;
+    // Stop the previous RAF loop BEFORE wiping the DOM (old order leaked frames → black reopen).
+    if (viewer) {
+      try { viewer.destroy(); } catch (e) {}
+      viewer = null;
+    }
     stage.innerHTML = `<div class="card-root" id="live-card"></div>`;
-    if (viewer) viewer.destroy();
-    viewer = new CardView($("#live-card"), spec);
+    let spec;
+    try {
+      spec = await api(`/api/cards/${card.code}`);
+    } catch (e) {
+      stage.innerHTML = `<p class="muted" style="padding:1rem">加载失败：${e.message || e}</p>`;
+      throw e;
+    }
+    const host = $("#live-card");
+    if (!host) return;
+    viewer = new CardView(host, spec);
     view.serialUrl = (spec.meta && spec.meta.serialUrl) || "";
     view.scale = 1;
     applyZoom();
