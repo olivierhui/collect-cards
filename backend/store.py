@@ -73,6 +73,42 @@ CARDS.mkdir(parents=True, exist_ok=True)
 
 PAID_TIERS = ("t3", "t4", "t5")
 FOLDER_RE = re.compile(r"^(S\d+)-(\d{1,3})(?:-(\d+))?$", re.I)
+MEM_RE = re.compile(r"^MEM-(\d{1,2})$", re.I)
+
+
+def parse_card_code(code: str) -> dict[str, Any] | None:
+    """Normalize S1-001-1 or MEM-01. Returns None if invalid."""
+    raw = (code or "").strip()
+    m = FOLDER_RE.match(raw)
+    if m:
+        season = m.group(1).upper()
+        cid = m.group(2).zfill(3)
+        n = int(m.group(3) or 1)
+        return {
+            "kind": "season",
+            "code": f"{season}-{cid}-{n}",
+            "season": season,
+            "characterId": cid,
+            "n": n,
+        }
+    m = MEM_RE.match(raw)
+    if m:
+        n = int(m.group(1))
+        if n < 1 or n > 24:
+            return None
+        return {
+            "kind": "memorial",
+            "code": f"MEM-{n:02d}",
+            "season": "MEM",
+            "characterId": f"M{n:02d}",
+            "n": 1,
+            "slotIndex": n - 1,
+        }
+    return None
+
+
+def is_card_code(code: str) -> bool:
+    return parse_card_code(code) is not None
 
 
 def _read(path: Path, default: Any) -> Any:
@@ -122,15 +158,11 @@ def scan_disk_cards() -> list[dict[str, Any]]:
     for folder in sorted(CARDS.iterdir()):
         if not folder.is_dir():
             continue
-        m = FOLDER_RE.match(folder.name)
-        if not m:
+        parsed = parse_card_code(folder.name)
+        if not parsed:
             continue
         if not (folder / "original.png").is_file() and not (folder / "subject.png").is_file():
             continue
-        season = m.group(1).upper()
-        cid = m.group(2).zfill(3)
-        n = int(m.group(3) or 1)
-        code = f"{season}-{cid}-{n}"
         meta: dict[str, Any] = {}
         mp = folder / "meta.json"
         if mp.is_file():
@@ -140,11 +172,12 @@ def scan_disk_cards() -> list[dict[str, Any]]:
                 meta = {}
         found.append(
             {
-                "season": season,
-                "characterId": cid,
-                "n": n,
-                "code": code,
-                "folder": folder.name,
+                "season": parsed["season"],
+                "characterId": parsed["characterId"],
+                "n": parsed["n"],
+                "code": parsed["code"],
+                "folder": parsed["code"],
+                "kind": parsed["kind"],
                 "name": (meta.get("name") or "").strip(),
                 "date": (meta.get("date") or "").strip(),
                 "mtime": folder.stat().st_mtime,
@@ -695,9 +728,44 @@ def _normalize_memorial(incoming: dict[str, Any]) -> dict[str, Any]:
     out_codes = []
     for i in range(n):
         c = str(codes[i]).strip() if i < len(codes) else ""
-        out_codes.append(c if FOLDER_RE.match(c) else "")
+        parsed = parse_card_code(c)
+        out_codes.append(parsed["code"] if parsed else "")
     title = str(incoming.get("title") or "纪念组").strip() or "纪念组"
     return {"title": title, "slots": n, "codes": out_codes}
+
+
+def assign_memorial_slot(code: str, name: str = "") -> dict[str, Any]:
+    """Put MEM-01.. into site.memorial.codes[n-1]. Also accepts season codes into first empty slot."""
+    parsed = parse_card_code(code)
+    if not parsed:
+        raise ValueError("编号必须是 S1-001-1 或 MEM-01")
+    code = parsed["code"]
+    site_data = site()
+    mem = _normalize_memorial(site_data.get("memorial") or {})
+    codes = list(mem.get("codes") or [])
+    if parsed["kind"] == "memorial":
+        idx = int(parsed["slotIndex"])
+        if idx >= mem["slots"]:
+            mem["slots"] = idx + 1
+        while len(codes) < mem["slots"]:
+            codes.append("")
+        while len(codes) <= idx:
+            codes.append("")
+        codes[idx] = code
+    else:
+        # season card dropped onto memorial: first empty slot, else slot 0
+        while len(codes) < mem["slots"]:
+            codes.append("")
+        try:
+            idx = codes.index("")
+        except ValueError:
+            idx = 0
+        codes[idx] = code
+    mem["codes"] = codes[: mem["slots"]]
+    cur = site()
+    cur["memorial"] = mem
+    _write(SITE, cur)
+    return {"ok": True, "code": code, "memorial": mem, "name": name}
 
 
 def memorial() -> dict[str, Any]:
@@ -759,13 +827,37 @@ def list_card_codes() -> list[str]:
 
 
 def register_drop(code: str, day: str, name: str = "", title: str = "") -> dict[str, Any]:
-    """出卡后写入 catalog.json 的 drops + characters。文件夹名应等于 serial。"""
-    card = find_card(code) or {}
-    m = FOLDER_RE.match(code)
-    if not m:
-        raise ValueError("编号必须是 S1-001-1 这种")
-    cid = m.group(2).zfill(3)
-    n = int(m.group(3) or 1)
+    """出卡后写入 catalog.json。MEM-01 进纪念组；S1-xxx 进当天投放。"""
+    parsed = parse_card_code(code)
+    if not parsed:
+        raise ValueError("编号必须是 S1-001-1 或 MEM-01")
+    code = parsed["code"]
+    if parsed["kind"] == "memorial":
+        assign_memorial_slot(code, name=name or title or code)
+        raw = _read(CATALOG, {"season": "S1", "slots": 24, "drops": {}, "characters": [], "tiers": {}})
+        cid = parsed["characterId"]
+        chars = raw.setdefault("characters", [])
+        ch = next((c for c in chars if str(c.get("id") or "") == cid), None)
+        if not ch:
+            ch = {"id": cid, "name": name or code, "cards": []}
+            chars.append(ch)
+        if name and not ch.get("name"):
+            ch["name"] = name
+        cards = ch.setdefault("cards", [])
+        hit = next((c for c in cards if c.get("code") == code), None)
+        if not hit:
+            cards.append({"n": 1, "code": code, "date": day or "", "title": title or name or code, "memorial": True})
+        else:
+            if title or name:
+                hit["title"] = title or name
+            hit["memorial"] = True
+        parked = [c for c in as_code_list(raw.get("pending")) if c != code]
+        raw["pending"] = parked
+        _write(CATALOG, raw)
+        return {"ok": True, "code": code, "date": day, "characterId": cid, "memorial": True}
+
+    cid = parsed["characterId"]
+    n = parsed["n"]
     raw = _read(CATALOG, {"season": "S1", "slots": 24, "drops": {}, "characters": [], "tiers": {}})
     drops = raw.setdefault("drops", {})
     existing = as_code_list(drops.get(day))
@@ -793,6 +885,7 @@ def register_drop(code: str, day: str, name: str = "", title: str = "") -> dict[
     return {"ok": True, "code": code, "date": day, "characterId": cid}
 
 
+
 def _write_card_date(code: str, day: str) -> None:
     folder = card_dir(code)
     mp = folder / "meta.json"
@@ -809,11 +902,12 @@ def _write_card_date(code: str, day: str) -> None:
 
 
 def _touch_character_card(raw: dict[str, Any], code: str, day: str | None, title: str = "") -> None:
-    m = FOLDER_RE.match(code)
-    if not m:
+    parsed = parse_card_code(code)
+    if not parsed:
         return
-    cid = m.group(2).zfill(3)
-    n = int(m.group(3) or 1)
+    code = parsed["code"]
+    cid = parsed["characterId"]
+    n = parsed["n"]
     chars = raw.setdefault("characters", [])
     ch = next((c for c in chars if str(c.get("id") or "").zfill(3) == cid), None)
     if not ch:
@@ -945,15 +1039,15 @@ def fix_drop(
       swap     recall the old code and give new_code to the same people (reassign only)
     """
     code = (code or "").strip()
-    if not FOLDER_RE.match(code):
-        raise ValueError("编号必须是 S1-001-1 这种")
+    if not is_card_code(code):
+        raise ValueError("编号必须是 S1-001-1 或 MEM-01")
     action = (action or "").strip()
     inventory_mode = (inventory_mode or "keep").strip()
     if action not in {"reassign", "move", "remove"}:
         raise ValueError("action 只能是 reassign / move / remove")
     if inventory_mode not in {"keep", "recall", "swap"}:
         raise ValueError("库存处理只能是 keep / recall / swap")
-    if action == "reassign" and not FOLDER_RE.match((new_code or "").strip()):
+    if action == "reassign" and not is_card_code((new_code or "").strip()):
         raise ValueError("请填写正确的新编号")
     if action == "move" and not (new_day or "").strip():
         raise ValueError("请填写新的投放日")
@@ -1003,9 +1097,10 @@ def fix_drop(
             recalled = recall_code(code)
 
     elif action == "reassign":
-        nxt = new_code.strip()
-        m = FOLDER_RE.match(nxt)
-        nxt = f"{m.group(1).upper()}-{m.group(2).zfill(3)}-{int(m.group(3) or 1)}"
+        parsed_new = parse_card_code(new_code.strip())
+        if not parsed_new:
+            raise ValueError("新编号必须是 S1-001-1 或 MEM-01")
+        nxt = parsed_new["code"]
         src_days = [day_s] if day_s else [d for d, val in drops.items() if code in as_code_list(val)]
         if not src_days:
             src_days = [today_str()]
@@ -1058,8 +1153,8 @@ TEXT_KEYS = (
 
 def read_card_text(code: str) -> dict[str, Any]:
     code = (code or "").strip()
-    if not FOLDER_RE.match(code):
-        raise ValueError("编号必须是 S1-001-1 这种")
+    if not is_card_code(code):
+        raise ValueError("编号必须是 S1-001-1 或 MEM-01")
     folder = card_dir(code)
     mp = folder / "meta.json"
     meta: dict[str, Any] = {}
@@ -1076,8 +1171,8 @@ def read_card_text(code: str) -> dict[str, Any]:
 def save_card_text(code: str, fields: dict[str, Any]) -> dict[str, Any]:
     """Update only face/back copy. Never touch FX (depth/glow/foil/eyes/chest)."""
     code = (code or "").strip()
-    if not FOLDER_RE.match(code):
-        raise ValueError("编号必须是 S1-001-1 这种")
+    if not is_card_code(code):
+        raise ValueError("编号必须是 S1-001-1 或 MEM-01")
     folder = card_dir(code)
     mp = folder / "meta.json"
     meta: dict[str, Any] = {}
@@ -1102,8 +1197,8 @@ def save_card_text(code: str, fields: dict[str, Any]) -> dict[str, Any]:
 def set_card_zone(code: str, zone: str, *, delete: bool = False, recall: bool = False) -> dict[str, Any]:
     """active = live drops; pending = 待放区; delete = remove files."""
     code = (code or "").strip()
-    if not FOLDER_RE.match(code):
-        raise ValueError("编号必须是 S1-001-1 这种")
+    if not is_card_code(code):
+        raise ValueError("编号必须是 S1-001-1 或 MEM-01")
     zone = (zone or "pending").strip()
     raw = catalog_raw()
     parked = as_code_list(raw.get("pending"))
@@ -1125,6 +1220,12 @@ def set_card_zone(code: str, zone: str, *, delete: bool = False, recall: bool = 
         raw["pending"] = parked
         raw["drops"] = drops
         _write(CATALOG, raw)
+        # Clear memorial slot if this code was pinned there.
+        cur = site()
+        mem = _normalize_memorial(cur.get("memorial") or {})
+        mem["codes"] = ["" if c == code else c for c in (mem.get("codes") or [])]
+        cur["memorial"] = mem
+        _write(SITE, cur)
         folder = card_dir(code)
         if folder.is_dir():
             import shutil
@@ -1155,7 +1256,14 @@ def set_card_zone(code: str, zone: str, *, delete: bool = False, recall: bool = 
         _write(CATALOG, raw)
         day = today_str()
         register_drop(code, day)
-        return {"ok": True, "code": code, "zone": "active", "date": day}
+        parsed = parse_card_code(code)
+        return {
+            "ok": True,
+            "code": code,
+            "zone": "active",
+            "date": day,
+            "memorial": bool(parsed and parsed["kind"] == "memorial"),
+        }
     raise ValueError("zone 只能是 active / pending")
 
 

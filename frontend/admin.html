@@ -92,16 +92,16 @@
   </section>
 
   <section class="admin-card">
-    <h2>上传一张卡</h2>
-    <p class="muted tiny">工作室 ZIP。编号必须是 S1-001-1。</p>
+    <h2>上传卡（可批量）</h2>
+    <p class="muted tiny">工作室 ZIP，可一次多选。季卡编号 <code>S1-001-1</code>；纪念组编号 <code>MEM-01</code> … <code>MEM-05</code>（会自动进纪念格）。</p>
     <label>投放日 <input id="zip-date" type="date" /></label>
     <label>放去
       <select id="zip-zone">
-        <option value="active">激活区（当天投放）</option>
+        <option value="active">激活区（当天投放 / 纪念组）</option>
         <option value="pending">待放区</option>
       </select>
     </label>
-    <input id="zip-file" type="file" accept=".zip" />
+    <input id="zip-file" type="file" accept=".zip" multiple />
     <button type="button" id="upload">上传</button>
   </section>
 
@@ -109,6 +109,6 @@
     <button type="button" class="primary" id="save">保存网站文字与投放</button>
     <span class="muted" id="status"></span>
   </div>
-  <script src="/static/admin.js?v=cabinet12"></script>
+  <script src="/static/admin.js?v=cabinet13"></script>
 </body>
 </html>
