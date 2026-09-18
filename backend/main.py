@@ -277,7 +277,7 @@ async def admin_drop_impact(request: Request, code: str = ""):
     require_creator(request)
     code = (code or "").strip()
     if not store.FOLDER_RE.match(code):
-        raise HTTPException(400, "编号必须是 S1-001-1 这种")
+        raise HTTPException(400, "编号必须是 S1-001-1 或 MEM-01")
     return {"ok": True, **store.drop_impact(code)}
 
 
@@ -400,21 +400,15 @@ async def admin_asset(code: str, filename: str, request: Request):
     return FileResponse(path)
 
 
-@app.post("/api/admin/card-zip")
-async def admin_card_zip(
-    request: Request,
-    file: UploadFile = File(...),
-    date: str = Form(""),
-    zone: str = Form("active"),
-):
-    require_creator(request)
-    day = (date or "").strip() or store.today_str()
-    suffix = Path(file.filename or "card.zip").suffix.lower()
-    if suffix != ".zip":
-        raise HTTPException(400, "请上传 ZIP")
+
+async def _ingest_card_zip_bytes(
+    raw: bytes,
+    filename: str,
+    day: str,
+    zone: str,
+) -> dict:
     root_tmp = Path(tempfile.mkdtemp(prefix="cardzip-"))
     try:
-        raw = await file.read()
         zpath = root_tmp / "card.zip"
         zpath.write_bytes(raw)
         with zipfile.ZipFile(zpath) as zf:
@@ -428,11 +422,11 @@ async def admin_card_zip(
         meta = {}
         if meta_path.is_file():
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        serial = str(meta.get("serial") or Path(file.filename or "").stem)
-        m = store.FOLDER_RE.match(serial.strip())
-        if not m:
-            raise HTTPException(400, "ZIP 里 meta.json 的 serial 要写成 S1-001-1")
-        code = f"{m.group(1).upper()}-{m.group(2).zfill(3)}-{int(m.group(3) or 1)}"
+        serial = str(meta.get("serial") or Path(filename or "").stem)
+        parsed = store.parse_card_code(serial.strip())
+        if not parsed:
+            raise HTTPException(400, "ZIP 里 meta.json 的 serial 要写成 S1-001-1 或 MEM-01")
+        code = parsed["code"]
         dest = store.CARDS / code
         dest.mkdir(parents=True, exist_ok=True)
         for name in ("original.png", "background.png", "subject.png", "meta.json"):
@@ -441,20 +435,77 @@ async def admin_card_zip(
                 shutil.copy2(src, dest / name)
         for src in folder.glob("extra_*.png"):
             shutil.copy2(src, dest / src.name)
+        meta = meta if isinstance(meta, dict) else {}
         meta["serial"] = code
         if (zone or "active").strip() == "pending":
             meta["date"] = ""
             (dest / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
             store.set_card_zone(code, "pending")
-            await github_sync.push_data_files(f"admin: pending {code}")
-            return {"ok": True, "code": code, "zone": "pending"}
+            return {"ok": True, "code": code, "zone": "pending", "kind": parsed["kind"]}
         meta["date"] = day
         (dest / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
         store.register_drop(code, day, meta.get("name") or "", meta.get("name") or "")
-        await github_sync.push_data_files(f"admin: add card {code}")
-        return {"ok": True, "code": code, "date": day, "zone": "active"}
+        return {
+            "ok": True,
+            "code": code,
+            "date": day,
+            "zone": "active",
+            "kind": parsed["kind"],
+            "memorial": parsed["kind"] == "memorial",
+        }
     finally:
         shutil.rmtree(root_tmp, ignore_errors=True)
+
+
+@app.post("/api/admin/card-zip")
+async def admin_card_zip(
+    request: Request,
+    file: UploadFile = File(...),
+    date: str = Form(""),
+    zone: str = Form("active"),
+):
+    require_creator(request)
+    day = (date or "").strip() or store.today_str()
+    suffix = Path(file.filename or "card.zip").suffix.lower()
+    if suffix != ".zip":
+        raise HTTPException(400, "请上传 ZIP")
+    raw = await file.read()
+    result = await _ingest_card_zip_bytes(raw, file.filename or "card.zip", day, zone)
+    await github_sync.push_data_files(f"admin: add card {result.get('code')}")
+    return result
+
+
+@app.post("/api/admin/card-zips")
+async def admin_card_zips(
+    request: Request,
+    files: list[UploadFile] = File(...),
+    date: str = Form(""),
+    zone: str = Form("active"),
+):
+    """Batch upload many studio ZIPs in one request, one GitHub sync at the end."""
+    require_creator(request)
+    day = (date or "").strip() or store.today_str()
+    if not files:
+        raise HTTPException(400, "没有文件")
+    results = []
+    errors = []
+    for file in files:
+        name = file.filename or "card.zip"
+        if Path(name).suffix.lower() != ".zip":
+            errors.append({"file": name, "error": "不是 ZIP"})
+            continue
+        try:
+            raw = await file.read()
+            results.append(await _ingest_card_zip_bytes(raw, name, day, zone))
+        except HTTPException as e:
+            errors.append({"file": name, "error": e.detail})
+        except Exception as e:
+            errors.append({"file": name, "error": str(e)})
+    if results:
+        codes = ",".join(r.get("code") or "?" for r in results[:8])
+        more = "" if len(results) <= 8 else f" +{len(results)-8}"
+        await github_sync.push_data_files(f"admin: batch add cards {codes}{more}")
+    return {"ok": True, "count": len(results), "results": results, "errors": errors}
 
 
 @app.get("/api/assets/{code}/{filename}")

@@ -251,22 +251,27 @@
     }
   };
   $("#upload").onclick = async () => {
-    const file = $("#zip-file").files[0];
-    if (!file) {
+    const list = Array.from($("#zip-file").files || []);
+    if (!list.length) {
       setStatus("先选 ZIP", false);
       return;
     }
     const fd = new FormData();
-    fd.append("file", file);
+    for (const file of list) fd.append("files", file);
     fd.append("date", $("#zip-date").value);
     fd.append("zone", $("#zip-zone").value);
     try {
-      setStatus("上传中…", true);
-      const r = await fetch("/api/admin/card-zip", { method: "POST", body: fd });
+      setStatus(list.length > 1 ? `批量上传 ${list.length} 个…` : "上传中…", true);
+      const r = await fetch("/api/admin/card-zips", { method: "POST", body: fd });
       const body = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(body.detail || r.statusText);
       await refresh();
-      setStatus(`已放入 ${body.code} · ${body.zone || body.date}`, true);
+      const ok = (body.results || []).map((x) => x.code).filter(Boolean);
+      const bad = (body.errors || []).map((x) => `${x.file}: ${x.error}`);
+      let msg = ok.length ? `已放入 ${ok.join(", ")}` : "没有成功";
+      if (bad.length) msg += ` · 失败 ${bad.length}：${bad.slice(0, 3).join("；")}`;
+      setStatus(msg, bad.length === 0);
+      $("#zip-file").value = "";
     } catch (e) {
       setStatus(e.message, false);
     }
