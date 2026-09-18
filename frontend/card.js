@@ -66,13 +66,17 @@
     this.floatOn = this.meta.float !== false;
     this.gaze = this.meta.gaze !== false;
     this.mini = !!spec.mini;
+    this._dead = false;
+    this._abort = typeof AbortController !== "undefined" ? new AbortController() : null;
     this.render();
     this.bind();
     this.load();
     if (this.mini) this.fitMini();
-    const loop = (t) => {
-      this.tick(t);
-      this.raf = requestAnimationFrame(loop);
+    const self = this;
+    const loop = (now) => {
+      if (self._dead) return;
+      self.tick(now);
+      self.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
   }
@@ -239,22 +243,25 @@
 
   CardView.prototype.bind = function () {
     const el = this.cardEl || this.root;
-    const stage = this.root.closest(".viewer-stage") || this.root;
+    const stage = this.root.closest("#viewer-stage") || this.root.closest(".float-card") || this.root;
+    const opts = this._abort ? { signal: this._abort.signal } : false;
     const track = (e) => {
+      if (this._dead) return;
       const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
       this.target.x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
       this.target.y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
     };
-    stage.addEventListener("pointermove", track);
+    stage.addEventListener("pointermove", track, opts);
     stage.addEventListener("pointerleave", () => {
       if (!this.down) {
         this.target.x = 0.5;
         this.target.y = 0.5;
       }
-    });
+    }, opts);
     el.addEventListener("pointerdown", (e) => {
       this.down = { x: e.clientX, y: e.clientY, t: Date.now() };
-    });
+    }, opts);
     el.addEventListener("pointerup", (e) => {
       if (this.mini) {
         this.down = null;
@@ -275,16 +282,17 @@
         return;
       }
       this.setFlipped(!this.flipped);
-    });
+    }, opts);
     this.root.querySelectorAll(".holo-face-btn").forEach((b) => {
       b.addEventListener("click", (e) => {
         e.stopPropagation();
         this.setFlipped(b.dataset.face === "back");
-      });
+      }, opts);
     });
   };
 
   CardView.prototype.tick = function (now) {
+    if (this._dead || !this.root || !this.root.isConnected) return;
     this.ptr.x += (this.target.x - this.ptr.x) * 0.14;
     this.ptr.y += (this.target.y - this.ptr.y) * 0.14;
     const px = this.ptr.x;
@@ -503,12 +511,22 @@
   };
 
   CardView.prototype.destroy = function () {
-    cancelAnimationFrame(this.raf);
+    this._dead = true;
+    if (this.raf) {
+      cancelAnimationFrame(this.raf);
+      this.raf = 0;
+    }
+    if (this._abort) {
+      try { this._abort.abort(); } catch (e) {}
+      this._abort = null;
+    }
     if (this._ro) {
       try { this._ro.disconnect(); } catch (e) {}
       this._ro = null;
     }
-    this.root.innerHTML = "";
+    if (this.root) {
+      try { this.root.innerHTML = ""; } catch (e) {}
+    }
   };
 
   global.CardView = CardView;
