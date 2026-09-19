@@ -555,6 +555,19 @@
         refreshViewerChrome();
       };
     }
+    const ov = $("#overlay");
+    if (ov && !ov.dataset.clearBgBound) {
+      ov.dataset.clearBgBound = "1";
+      ov.addEventListener("click", (e) => {
+        if (!view.clear) return;
+        // only bare backdrop / stage padding — not the card itself
+        if (e.target.closest(".holo-card-wrap, .holo-card, #live-card, .float-card .card-root")) return;
+        if (e.target.closest(".ov-chip, .prop-sheet, button, a")) return;
+        view.clear = false;
+        applyClear();
+        refreshViewerChrome();
+      });
+    }
     const stage = $("#float-stage");
     if (stage) {
       stage.addEventListener("wheel", (e) => {
@@ -636,6 +649,12 @@
   document.addEventListener("contextmenu", (e) => {
     if ($("#overlay") && !$("#overlay").classList.contains("hidden")) {
       e.preventDefault();
+      if (view.clear) {
+        view.clear = false;
+        applyClear();
+        refreshViewerChrome();
+        return;
+      }
       doUndo();
     }
   });
@@ -647,6 +666,12 @@
     const tag = (e.target && e.target.tagName) || "";
     if (tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable)) return;
     e.preventDefault();
+    if (view.clear) {
+      view.clear = false;
+      applyClear();
+      refreshViewerChrome();
+      return;
+    }
     doUndo();
   });
 

@@ -95,21 +95,19 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
 }
 .overlay.hidden { display: none; }
 .overlay.viewer-simple .prop-sheet { transform: translateX(110%); pointer-events: none; opacity: 0; }
-/* 清屏预览：全黑底，只留卡片 */
+/* 清屏预览：全黑底，只留卡片（无任何控件） */
 .overlay.viewer-clear {
   background: #000;
 }
 .overlay.viewer-clear .viewer-strip,
 .overlay.viewer-clear .prop-sheet,
-.overlay.viewer-clear .ov-chip:not(#btn-clear-preview),
-.overlay.viewer-clear .holo-face-toggle {
+.overlay.viewer-clear .ov-chip,
+.overlay.viewer-clear .holo-face-toggle,
+.overlay.viewer-clear .cover-fab {
   display: none !important;
 }
-.overlay.viewer-clear #btn-clear-preview {
-  opacity: .55;
-}
-.overlay.viewer-clear #btn-clear-preview:hover {
-  opacity: 1;
+.overlay.viewer-clear .float-card {
+  filter: none;
 }
 .float-stage {
   position: relative;
