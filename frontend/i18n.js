@@ -29,7 +29,7 @@
       tier: { t2: "T2", t3: "T3 白银", t4: "T4 黄金", t5: "T5 幻彩", none: "未订阅" },
       frame: { silver: "银", gold: "金", prism: "幻彩", iron: "铁" },
       mock: "模拟",
-      hint: "移动鼠标看眼神 · 点胸部会弹 · 点卡翻面 · 右键返回",
+      hint: "移动鼠标看眼神 · 点胸部会弹 · 点卡翻面 · 右键/Esc返回",
     },
     en: {
       login: "Patreon log in",
@@ -60,7 +60,7 @@
       tier: { t2: "T2", t3: "T3 Silver", t4: "T4 Gold", t5: "T5 Prism", none: "Not subscribed" },
       frame: { silver: "Silver", gold: "Gold", prism: "Prism", iron: "Iron" },
       mock: "Mock",
-      hint: "Move to look · tap chest · tap to flip · right-click to undo",
+      hint: "Move to look · tap chest · tap to flip · right-click or Esc to undo",
     },
     ja: {
       login: "Patreon ログイン",
@@ -91,7 +91,7 @@
       tier: { t2: "T2", t3: "T3 シルバー", t4: "T4 ゴールド", t5: "T5 プリズム", none: "未加入" },
       frame: { silver: "銀", gold: "金", prism: "虹", iron: "鉄" },
       mock: "テスト",
-      hint: "視線・胸・裏返し・右クリックで戻る",
+      hint: "視線・胸・裏返し・右クリック/Escで戻る",
     },
   };
 
