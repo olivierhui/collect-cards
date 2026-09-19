@@ -112,6 +112,18 @@
     if (gate) site.gate = gate.innerText.trim();
     if (note) site.note = note.innerText.trim();
     site.layout = layout();
+    // Keep zh fan-copy in site.i18n so EN/JA packs stay clean when editing in Chinese.
+    site.i18n = Object.assign({}, site.i18n || {});
+    site.i18n.zh = Object.assign({}, site.i18n.zh || {}, {
+      title: site.title || "",
+      gate: site.gate || "",
+      note: site.note || "",
+      hint: site.hint || "",
+      collectionLabel: site.collectionLabel || "",
+      subscribeLabel: site.subscribeLabel || "",
+      pageTitle: site.pageTitle || "",
+      memorialTitle: (site.memorial && site.memorial.title) || "",
+    });
     const order = $$("#cabinet .slot").map((el) => el.dataset.cid).filter(Boolean);
     if (order.length) site.layout.slotOrder = order;
     const mem = site.memorial || (window.__cabinet.cabinet && window.__cabinet.cabinet.memorial) || { title: "纪念组", slots: 5, codes: ["", "", "", "", ""] };

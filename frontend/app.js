@@ -20,6 +20,11 @@
   function t(k, vars) {
     return window.I18N ? I18N.t(k, vars) : k;
   }
+  function siteText(field, fallbackKey) {
+    const site = (me && me.site) || {};
+    if (window.I18N && I18N.siteText) return I18N.siteText(site, field, fallbackKey || field);
+    return (site[field] && String(site[field]).trim()) || t(fallbackKey || field);
+  }
   function frameName(v) {
     return window.I18N ? I18N.frameLabel(v) : v || "";
   }
@@ -59,9 +64,13 @@
         I18N.setLang(b.dataset.lang);
         renderTop();
         renderStatus();
-        renderCabinet();
         applySite(me && me.site);
-        if (!$("#overlay").classList.contains("hidden") && view.cid) refreshViewerChrome();
+        applyShelf();
+        renderCabinet();
+        if (!$("#overlay").classList.contains("hidden") && view.cid) {
+          refreshViewerChrome();
+          if (viewer && viewer.renderText) viewer.renderText();
+        }
       };
     });
   }
@@ -152,7 +161,7 @@
     }
     if (!me.user.paid) {
       const sub = me.subscribeUrl || "https://www.patreon.com/18animegirls";
-      const lab = me.subscribeLabel || t("goPatreon");
+      const lab = siteText("subscribeLabel", "subscribe");
       bar.innerHTML = `<p class="muted">${t("statusUnpaid")}</p>${extA(sub, lab, "btn primary")}`;
       return;
     }
@@ -244,7 +253,7 @@
       applyShelf();
       return;
     }
-    if (title) title.textContent = mem.title || "纪念组";
+    if (title) title.textContent = siteText("memorialTitle", "shelfMemorial") || (mem && mem.title) || t("shelfMemorial");
     const slots = mem.slots || [];
     grid.innerHTML = slots.map((s, i) => {
       const cover = s.cover;
@@ -280,9 +289,13 @@
     const lab = $("#shelf-label");
     const editing = window.CabinetEditor && window.CabinetEditor.on;
     const hiddenBlocks = new Set((me && me.site && me.site.layout && me.site.layout.hiddenBlocks) || []);
-    const memTitle = (cabinet && cabinet.memorial && cabinet.memorial.title) || "纪念组";
-    const cabTitle = (me && me.site && me.site.title) || "个人典藏柜";
+    const memTitle = siteText("memorialTitle", "shelfMemorial");
+    const cabTitle = siteText("title", "shelfCabinet");
     if (lab) lab.textContent = shelf === "memorial" ? memTitle : cabTitle;
+    document.querySelectorAll("#shelf-menu [data-shelf]").forEach((b) => {
+      if (b.dataset.shelf === "cabinet") b.textContent = t("shelfCabinet");
+      if (b.dataset.shelf === "memorial") b.textContent = t("shelfMemorial");
+    });
     if (cab) {
       const show = !!me && !!me.user && (shelf === "cabinet" || editing);
       cab.classList.toggle("hidden", !show);
@@ -409,6 +422,11 @@
       strip.classList.toggle("hidden", view.cards.length < 2);
     }
     $("#btn-hide-info").textContent = view.simple ? t("showInfo") : t("hideInfo");
+    const collapse = $("#btn-hide-info-x");
+    if (collapse) {
+      collapse.textContent = t("collapse");
+      collapse.setAttribute("aria-label", t("hideInfo"));
+    }
     $("#btn-cover").textContent = t("setCover");
     const clearBtn = $("#btn-clear-preview");
     if (clearBtn) clearBtn.textContent = view.clear ? t("exitClearPreview") : t("clearPreview");
@@ -418,7 +436,7 @@
     applyClear();
     const hint = $("#viewer-hint");
     const site = (me && me.site) || {};
-    if (hint) hint.textContent = site.hint || t("hint");
+    if (hint) hint.textContent = siteText("hint", "hint");
     // Per-card Patreon full set link (属性面板). Always show the control; disable if unset.
     const url = (
       (view.serialUrl || "")
@@ -426,7 +444,7 @@
       || (site.collectionUrl || "")
       || ""
     ).trim();
-    const label = site.collectionLabel || "打开 Patreon full set";
+    const label = siteText("collectionLabel", "openFullSet");
     const link = $("#prop-collection");
     if (link) {
       link.textContent = label;
@@ -507,7 +525,7 @@
     try {
       spec = await api(`/api/cards/${card.code}`);
     } catch (e) {
-      stage.innerHTML = `<p class="muted" style="padding:1rem">加载失败：${e.message || e}</p>`;
+      stage.innerHTML = `<p class="muted" style="padding:1rem">${t("loadFail", { msg: e.message || e })}</p>`;
       throw e;
     }
     const host = $("#live-card");
@@ -729,15 +747,15 @@
 
   function applySite(site) {
     if (!site) return;
-    if (site.pageTitle) document.title = site.pageTitle;
+    document.title = siteText("pageTitle", "pageTitle");
     const kicker = document.querySelector(".kicker");
     const title = document.querySelector(".top h1");
     const gate = document.querySelector("#gate p");
     const noteWrap = document.querySelector("#page-note");
     const note = document.querySelector("#ed-note");
     if (kicker && site.kicker) kicker.textContent = site.kicker;
-    if (title && site.title) title.textContent = site.title;
-    if (gate && site.gate) gate.textContent = site.gate;
+    if (title) title.textContent = siteText("title", "shelfCabinet");
+    if (gate) gate.textContent = siteText("gate", "gate");
     if (note) note.textContent = site.note || "";
     if (noteWrap) {
       const editing = window.CabinetEditor && window.CabinetEditor.on;
