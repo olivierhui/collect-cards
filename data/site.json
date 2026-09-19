@@ -46,7 +46,7 @@
       "propWallpaper": false,
       "propHint": true,
       "propCover": true,
-      "faceToggle": true,
+      "faceToggle": false,
       "ownedBadge": true,
       "cardDate": false
     }
