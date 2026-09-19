@@ -24,7 +24,10 @@
       "S1-002-1",
       "S1-003-1",
       "S1-004-1",
-      "S1-005-1"
+      "S1-005-1",
+      "S1-008-1",
+      "S1-007-1",
+      "S1-006-1"
     ]
   },
   "characters": [
@@ -78,7 +81,7 @@
     },
     {
       "id": "005",
-      "name": "",
+      "name": "MaoMao",
       "cards": [
         {
           "n": 1,
@@ -90,36 +93,36 @@
     },
     {
       "id": "006",
-      "name": "",
+      "name": "Ah Duo",
       "cards": [
         {
           "n": 1,
           "code": "S1-006-1",
-          "date": "",
+          "date": "2026-09-19",
           "title": "S1-006-1"
         }
       ]
     },
     {
       "id": "007",
-      "name": "",
+      "name": "Echidna",
       "cards": [
         {
           "n": 1,
           "code": "S1-007-1",
-          "date": "",
+          "date": "2026-09-19",
           "title": "S1-007-1"
         }
       ]
     },
     {
       "id": "008",
-      "name": "",
+      "name": "Chisa Kotegawa",
       "cards": [
         {
           "n": 1,
           "code": "S1-008-1",
-          "date": "",
+          "date": "2026-09-19",
           "title": "S1-008-1"
         }
       ]
@@ -206,7 +209,7 @@
     },
     {
       "id": "M01",
-      "name": "",
+      "name": "Marin Kitagawa, Sajuna Inui, Shinju Inui",
       "cards": [
         {
           "n": 1,
@@ -218,9 +221,5 @@
       ]
     }
   ],
-  "pending": [
-    "S1-006-1",
-    "S1-007-1",
-    "S1-008-1"
-  ]
+  "pending": []
 }
