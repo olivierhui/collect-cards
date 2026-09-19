@@ -669,3 +669,77 @@ body.editing .ed-block-off {
   pointer-events: none;
   cursor: default;
 }
+
+
+/* —— 自由排版 —— */
+body.freeform-layout {
+  position: relative;
+  min-height: 100vh;
+}
+body.freeform-layout .top,
+body.freeform-layout #status-bar,
+body.freeform-layout #gate,
+body.freeform-layout #page-note,
+body.freeform-layout #cabinet,
+body.freeform-layout #memorial-wrap {
+  position: absolute;
+  margin: 0;
+  z-index: 2;
+}
+body.freeform-layout #cabinet,
+body.freeform-layout #memorial .cabinet {
+  overflow: auto;
+}
+.ed-free {
+  outline: 1px dashed transparent;
+}
+body.editing.freeform-layout .ed-free {
+  outline: 1px dashed rgba(232,195,106,.35);
+}
+.ed-free-handle {
+  display: none;
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 28px;
+  z-index: 8;
+  cursor: grab;
+  background: linear-gradient(180deg, rgba(232,195,106,.22), transparent);
+  border-radius: 8px 8px 0 0;
+  font-size: 11px;
+  color: var(--gold);
+  padding: 4px 10px;
+  user-select: none;
+  touch-action: none;
+}
+body.editing.freeform-layout .ed-free-handle { display: block; }
+.ed-free-handle:active { cursor: grabbing; }
+.ed-free-resize {
+  display: none;
+  position: absolute;
+  right: 2px; bottom: 2px;
+  width: 16px; height: 16px;
+  z-index: 9;
+  cursor: nwse-resize;
+  border-radius: 4px;
+  background: rgba(232,195,106,.85);
+  touch-action: none;
+}
+body.editing.freeform-layout .ed-free-resize { display: block; }
+.ed-free.dragging, .ed-free.resizing {
+  outline-color: var(--gold) !important;
+  z-index: 12 !important;
+}
+#ed-freeform.on {
+  background: rgba(232,195,106,.18);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+/* viewer chrome free move (always, light handle) */
+#ov-tools.ed-viewer-free,
+#viewer-side.ed-viewer-free,
+#close-viewer.ed-viewer-free {
+  touch-action: none;
+}
+.ov-tools.ed-viewer-free { cursor: grab; }
+.ov-tools.ed-viewer-free:active { cursor: grabbing; }
+#viewer-side.ed-viewer-free .prop-head { cursor: grab; }
