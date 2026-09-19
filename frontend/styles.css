@@ -492,6 +492,18 @@ body.hide-owned-badge .slot .count { display: none !important; }
   transform: translate(-50%, -50%) scale(var(--s, 1));
   transform-origin: center center; white-space: nowrap; max-width: 90%;
 }
+.holo-back-inner .back-mod[data-back="kicker"],
+.holo-back-inner .back-mod[data-back="brand"],
+.holo-back-inner .back-mod[data-back="sub"],
+.holo-back-inner .back-mod[data-back="edition"],
+.holo-back-inner .back-mod[data-back="serial"] {
+  white-space: normal;
+  width: 68%;
+  max-width: 68%;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .holo-back-kicker { font-size: 11px; letter-spacing: 0.28em; }
 .holo-back-mono {
   font-family: "Noto Serif SC", "Times New Roman", serif; font-size: 64px; line-height: 0.9;
