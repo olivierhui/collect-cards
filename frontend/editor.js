@@ -31,6 +31,9 @@
       hiddenSlots: [...(lay.hiddenSlots || [])],
       hiddenBlocks: [...(lay.hiddenBlocks || [])],
       modules: Object.assign({}, (lay.modules || {})),
+      freeform: !!lay.freeform,
+      frames: Object.assign({}, (lay.frames || {})),
+      viewer: Object.assign({}, (lay.viewer || {})),
     };
   }
 
@@ -54,6 +57,9 @@
     wireText();
     window.__cabinet.renderCabinet();
     loadLibrary();
+    syncFreeformChrome();
+    wireFreeform();
+    wireViewerFree();
   }
 
   function exit(saveFirst) {
@@ -69,7 +75,9 @@
     $$("[data-ed]").forEach((el) => {
       el.removeAttribute("contenteditable");
     });
+    teardownFreeformHandles();
     window.__cabinet.renderCabinet();
+    if (window.__cabinet.applySite) window.__cabinet.applySite(window.__cabinet.me.site);
   }
 
   function wireText() {
@@ -135,6 +143,9 @@
         document.body.classList.add("editing");
         wireText();
         window.__cabinet.renderCabinet();
+        syncFreeformChrome();
+        wireFreeform();
+        wireViewerFree();
       }
     } catch (e) {
       setStatus(e.message);
@@ -344,6 +355,9 @@
         document.body.classList.add("editing");
         wireText();
         window.__cabinet.renderCabinet();
+        syncFreeformChrome();
+        wireFreeform();
+        wireViewerFree();
       }
     } catch (e) {
       setStatus(e.message);
@@ -407,6 +421,9 @@
         document.body.classList.add("editing");
         wireText();
         window.__cabinet.renderCabinet();
+        syncFreeformChrome();
+        wireFreeform();
+        wireViewerFree();
       }
     } catch (e) {
       $("#ed-fix-msg").textContent = e.message;
@@ -456,6 +473,265 @@
       };
     }
   }
+
+
+  const PAGE_FRAMES = [
+    { id: "top", sel: "header.top" },
+    { id: "status", sel: "#status-bar" },
+    { id: "gate", sel: "#gate" },
+    { id: "note", sel: "#page-note" },
+    { id: "cabinet", sel: "#cabinet" },
+    { id: "memorial", sel: "#memorial-wrap" },
+  ];
+  const VIEWER_FRAMES = [
+    { id: "ov-tools", sel: "#ov-tools" },
+    { id: "viewer-side", sel: "#viewer-side" },
+    { id: "close-viewer", sel: "#close-viewer" },
+  ];
+
+  function siteLayoutMut() {
+    const site = window.__cabinet.me.site || (window.__cabinet.me.site = {});
+    site.layout = layout();
+    site.layout.frames = site.layout.frames || {};
+    site.layout.viewer = site.layout.viewer || {};
+    return site.layout;
+  }
+
+  function syncFreeformChrome() {
+    const lay = layout();
+    document.body.classList.toggle("freeform-layout", !!lay.freeform);
+    const btn = $("#ed-freeform");
+    if (btn) {
+      btn.classList.toggle("on", !!lay.freeform);
+      btn.textContent = lay.freeform ? "自由排版 · 开" : "自由排版";
+    }
+    if (window.__cabinet.applyFrames) window.__cabinet.applyFrames();
+  }
+
+  function measureEl(el) {
+    const r = el.getBoundingClientRect();
+    return {
+      x: Math.round(r.left + window.scrollX),
+      y: Math.round(r.top + window.scrollY),
+      w: Math.round(Math.max(r.width, 80)),
+      h: Math.round(Math.max(r.height, 40)),
+    };
+  }
+
+  function applyBox(el, box, mode) {
+    if (!el || !box) return;
+    el.style.left = box.x + "px";
+    el.style.top = box.y + "px";
+    el.style.width = box.w + "px";
+    if (mode === "viewer") {
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.position = "fixed";
+      if (box.h) el.style.height = box.h + "px";
+    } else {
+      el.style.height = box.h + "px";
+    }
+  }
+
+  function snapshotMissingFrames() {
+    const lay = siteLayoutMut();
+    PAGE_FRAMES.forEach(({ id, sel }) => {
+      const el = $(sel);
+      if (!el || lay.frames[id]) return;
+      if (el.classList.contains("hidden")) return;
+      lay.frames[id] = measureEl(el);
+    });
+  }
+
+  function teardownFreeformHandles() {
+    $$(".ed-free-handle, .ed-free-resize").forEach((n) => n.remove());
+    $$(".ed-free").forEach((el) => el.classList.remove("ed-free", "dragging", "resizing"));
+  }
+
+  function wireFreeform() {
+    teardownFreeformHandles();
+    const lay = layout();
+    if (!state.on || !lay.freeform) return;
+    PAGE_FRAMES.forEach(({ id, sel }) => {
+      const el = $(sel);
+      if (!el) return;
+      el.classList.add("ed-free");
+      el.dataset.frameId = id;
+      if (![...el.children].some((c) => c.classList && c.classList.contains("ed-free-handle"))) {
+        const handle = document.createElement("div");
+        handle.className = "ed-free-handle";
+        handle.textContent = "拖动 · 右下角缩放";
+        el.appendChild(handle);
+        const grip = document.createElement("div");
+        grip.className = "ed-free-resize";
+        grip.title = "缩放";
+        el.appendChild(grip);
+        bindFramePointer(el, handle, grip, "frames", id);
+      }
+    });
+  }
+
+  function bindFramePointer(el, handle, grip, bucket, id) {
+    const startDrag = (ev, kind) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const lay = siteLayoutMut();
+      const cur = (lay[bucket] && lay[bucket][id]) || measureEl(el);
+      const ptr = ev.touches ? ev.touches[0] : ev;
+      const ox = ptr.clientX;
+      const oy = ptr.clientY;
+      const origin = { ...cur };
+      el.classList.add(kind === "resize" ? "resizing" : "dragging");
+      const move = (e2) => {
+        const p = e2.touches ? e2.touches[0] : e2;
+        const dx = p.clientX - ox;
+        const dy = p.clientY - oy;
+        let next;
+        if (kind === "resize") {
+          next = {
+            x: origin.x,
+            y: origin.y,
+            w: Math.max(80, origin.w + dx),
+            h: Math.max(40, origin.h + dy),
+          };
+        } else {
+          next = {
+            x: Math.max(0, origin.x + dx),
+            y: Math.max(0, origin.y + dy),
+            w: origin.w,
+            h: origin.h,
+          };
+        }
+        lay[bucket][id] = next;
+        applyBox(el, next, bucket === "viewer" ? "viewer" : "page");
+      };
+      const up = () => {
+        el.classList.remove("dragging", "resizing");
+        window.__cabinet.me.site.layout = layout();
+        window.__cabinet.me.site.layout[bucket] = siteLayoutMut()[bucket];
+        markDirty();
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        document.removeEventListener("touchmove", move);
+        document.removeEventListener("touchend", up);
+      };
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up);
+      document.addEventListener("touchmove", move, { passive: false });
+      document.addEventListener("touchend", up);
+    };
+    handle.onpointerdown = (e) => startDrag(e, "drag");
+    grip.onpointerdown = (e) => startDrag(e, "resize");
+    handle.ontouchstart = (e) => startDrag(e, "drag");
+    grip.ontouchstart = (e) => startDrag(e, "resize");
+  }
+
+  function toggleFreeform() {
+    const lay = siteLayoutMut();
+    if (!lay.freeform) {
+      lay.freeform = true;
+      // leave flow briefly to measure natural boxes
+      document.body.classList.remove("freeform-layout");
+      PAGE_FRAMES.forEach(({ sel }) => {
+        const el = $(sel);
+        if (!el) return;
+        el.style.left = "";
+        el.style.top = "";
+        el.style.width = "";
+        el.style.height = "";
+      });
+      requestAnimationFrame(() => {
+        snapshotMissingFrames();
+        window.__cabinet.me.site.layout = lay;
+        syncFreeformChrome();
+        wireFreeform();
+        markDirty();
+        setStatus("自由排版已开：拖顶条移动，右下角缩放，记得到保存");
+      });
+    } else {
+      lay.freeform = false;
+      window.__cabinet.me.site.layout = lay;
+      syncFreeformChrome();
+      teardownFreeformHandles();
+      markDirty();
+      setStatus("自由排版已关（坐标还留着，可再打开；要清空点「重置排版」）");
+    }
+  }
+
+  function resetFreeform() {
+    if (!confirm("清掉所有自由排版坐标，恢复默认从上到下的排版？")) return;
+    const lay = siteLayoutMut();
+    lay.freeform = false;
+    lay.frames = {};
+    lay.viewer = {};
+    window.__cabinet.me.site.layout = lay;
+    PAGE_FRAMES.forEach(({ sel }) => {
+      const el = $(sel);
+      if (!el) return;
+      el.style.left = "";
+      el.style.top = "";
+      el.style.width = "";
+      el.style.height = "";
+    });
+    VIEWER_FRAMES.forEach(({ sel }) => {
+      const el = $(sel);
+      if (!el) return;
+      el.style.left = "";
+      el.style.top = "";
+      el.style.width = "";
+      el.style.height = "";
+      el.style.right = "";
+      el.style.bottom = "";
+    });
+    syncFreeformChrome();
+    teardownFreeformHandles();
+    wireViewerFree();
+    markDirty();
+    setStatus("已重置排版");
+  }
+
+  function wireViewerFree() {
+    VIEWER_FRAMES.forEach(({ id, sel }) => {
+      const el = $(sel);
+      if (!el || el.dataset.viewerFreeBound) return;
+      el.dataset.viewerFreeBound = "1";
+      el.classList.add("ed-viewer-free");
+      const dragTarget = id === "viewer-side" ? (el.querySelector(".prop-head") || el) : el;
+      dragTarget.addEventListener("pointerdown", (ev) => {
+        if (ev.target.closest("button, a, input, textarea")) return;
+        if (id === "viewer-side" && !ev.target.closest(".prop-head")) return;
+        // only creators rearrange shared viewer chrome while editing; others get applied layout only
+        if (!state.on) return;
+        const lay = siteLayoutMut();
+        const box = (lay.viewer && lay.viewer[id]) || (() => {
+          const r = el.getBoundingClientRect();
+          return { x: r.left, y: r.top, w: r.width, h: r.height };
+        })();
+        const ptr = ev;
+        const ox = ptr.clientX;
+        const oy = ptr.clientY;
+        const origin = { ...box };
+        const move = (e2) => {
+          const next = {
+            x: Math.max(0, origin.x + (e2.clientX - ox)),
+            y: Math.max(0, origin.y + (e2.clientY - oy)),
+            w: origin.w,
+            h: origin.h,
+          };
+          lay.viewer[id] = next;
+          applyBox(el, next, "viewer");
+        };
+        const up = () => {
+          markDirty();
+          document.removeEventListener("pointermove", move);
+          document.removeEventListener("pointerup", up);
+        };
+        document.addEventListener("pointermove", move);
+        document.addEventListener("pointerup", up);
+      });
+    });
+  }
+
 
   const MOD_LABELS = {
     propTitle: "属性标题",
@@ -560,6 +836,10 @@
       b.onclick = () => toggleBlock(b.dataset.hideBlock);
     });
     $("#ed-mods") && ($("#ed-mods").onclick = openMods);
+    $("#ed-freeform") && ($("#ed-freeform").onclick = toggleFreeform);
+    $("#ed-freeform-reset") && ($("#ed-freeform-reset").onclick = resetFreeform);
+    wireViewerFree();
+    syncFreeformChrome();
   }
 
   window.CabinetEditor = {
@@ -570,6 +850,8 @@
     bindMemorial,
     mount,
     markDirty,
+    syncFreeformChrome,
+    wireFreeform,
   };
 
   if (document.readyState === "loading") {

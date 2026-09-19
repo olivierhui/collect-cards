@@ -674,6 +674,59 @@
     doUndo();
   });
 
+
+  function applyFrames() {
+    const site = (me && me.site) || {};
+    const lay = site.layout || {};
+    const free = !!lay.freeform;
+    document.body.classList.toggle("freeform-layout", free);
+    const pageMap = {
+      top: "header.top",
+      status: "#status-bar",
+      gate: "#gate",
+      note: "#page-note",
+      cabinet: "#cabinet",
+      memorial: "#memorial-wrap",
+    };
+    const frames = lay.frames || {};
+    Object.keys(pageMap).forEach((id) => {
+      const el = document.querySelector(pageMap[id]);
+      if (!el) return;
+      const box = frames[id];
+      if (free && box) {
+        el.style.left = box.x + "px";
+        el.style.top = box.y + "px";
+        el.style.width = box.w + "px";
+        el.style.height = box.h + "px";
+      } else if (!free) {
+        el.style.left = "";
+        el.style.top = "";
+        el.style.width = "";
+        el.style.height = "";
+      }
+    });
+    const viewerMap = {
+      "ov-tools": "#ov-tools",
+      "viewer-side": "#viewer-side",
+      "close-viewer": "#close-viewer",
+    };
+    const viewer = lay.viewer || {};
+    Object.keys(viewerMap).forEach((id) => {
+      const el = document.querySelector(viewerMap[id]);
+      if (!el) return;
+      const box = viewer[id];
+      if (box) {
+        el.style.position = "fixed";
+        el.style.left = box.x + "px";
+        el.style.top = box.y + "px";
+        el.style.right = "auto";
+        el.style.bottom = "auto";
+        if (box.w) el.style.width = box.w + "px";
+        if (id === "viewer-side" && box.h) el.style.height = box.h + "px";
+      }
+    });
+  }
+
   function applySite(site) {
     if (!site) return;
     if (site.pageTitle) document.title = site.pageTitle;
@@ -698,6 +751,7 @@
     applyModules();
     if (kicker) kicker.classList.toggle("ed-block-off", hidden.has("kicker"));
     if (title) title.classList.toggle("ed-block-off", hidden.has("title"));
+    applyFrames();
   }
 
   async function boot() {
@@ -726,6 +780,7 @@
     set cabinet(v) { cabinet = v; },
     api,
     boot,
+    applyFrames,
     renderCabinet,
     applySite,
   };

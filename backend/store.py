@@ -49,6 +49,9 @@ SITE_DEFAULT = {
         "slotOrder": [],
         "hiddenSlots": [],
         "hiddenBlocks": [],
+        "freeform": False,
+        "frames": {},
+        "viewer": {},
         "modules": {
             "propTitle": True,
             "propCode": True,
@@ -713,11 +716,52 @@ def _normalize_layout(incoming: dict[str, Any], prev: Any) -> dict[str, Any]:
         for k, v in mods_in.items():
             if k in default_mods:
                 mods[k] = bool(v)
+    def clean_frames(src: Any) -> dict[str, Any]:
+        out: dict[str, Any] = {}
+        if not isinstance(src, dict):
+            return out
+        for key, val in src.items():
+            if not isinstance(val, dict):
+                continue
+            try:
+                x = float(val.get("x", 0))
+                y = float(val.get("y", 0))
+                w = float(val.get("w", 0))
+                h = float(val.get("h", 0))
+            except (TypeError, ValueError):
+                continue
+            if w < 40 or h < 24:
+                continue
+            out[str(key)] = {
+                "x": round(x, 1),
+                "y": round(y, 1),
+                "w": round(w, 1),
+                "h": round(h, 1),
+            }
+        return out
+
+    frames: dict[str, Any] = {}
+    if isinstance(prev, dict):
+        frames.update(clean_frames(prev.get("frames")))
+    frames.update(clean_frames(incoming.get("frames")))
+    viewer: dict[str, Any] = {}
+    if isinstance(prev, dict):
+        viewer.update(clean_frames(prev.get("viewer")))
+    viewer.update(clean_frames(incoming.get("viewer")))
+    freeform = False
+    if isinstance(prev, dict):
+        freeform = bool(prev.get("freeform"))
+    if "freeform" in incoming:
+        freeform = bool(incoming.get("freeform"))
+
     return {
         "slotOrder": [str(x).zfill(3) if str(x).isdigit() else str(x) for x in ids(order)],
         "hiddenSlots": [str(x).zfill(3) if str(x).isdigit() else str(x) for x in ids(hidden)],
         "hiddenBlocks": ids(blocks),
         "modules": mods,
+        "freeform": freeform,
+        "frames": frames,
+        "viewer": viewer,
     }
 
 
