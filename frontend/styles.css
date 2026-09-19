@@ -499,7 +499,10 @@ body.hide-owned-badge .slot .count { display: none !important; }
 }
 .holo-back-brand { font-size: 12px; letter-spacing: 0.34em; }
 .holo-back-rule { width: 42px; height: 1px; background: #8a6a3a; opacity: 0.5; margin: 4px 0; }
-.holo-back-edition, .holo-back-serial { font-size: 10px; letter-spacing: 0.18em; opacity: 0.75; }
+.holo-back-edition, .holo-back-serial {
+  font-size: 10px; letter-spacing: 0.14em; opacity: 0.75;
+  white-space: normal; max-width: 78%; line-height: 1.35;
+}
 .holo-type {
   position: absolute; inset: 0; z-index: 30; pointer-events: none;
   color: var(--fx2); font-family: "Noto Serif SC", serif;

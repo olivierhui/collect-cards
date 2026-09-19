@@ -197,7 +197,7 @@
     setTxt(".holo-back-brand", this.meta.backBrand || i18("backBrand", "ANIME GIRLS"));
     setTxt(".holo-back-sub", this.meta.backSub || "");
     setTxt(".holo-back-edition", this.meta.edition || "");
-    setTxt(".holo-back-serial", serial);
+    setTxt(".holo-back-serial", this.meta.backLine || serial);
     this.applyBackLayout();
   };
 
