@@ -98,7 +98,7 @@ def is_campaign_creator(identity_json: dict[str, Any]) -> bool:
 
 
 def map_tier(identity_json: dict[str, Any]) -> tuple[str | None, str]:
-    """Return (t3|t4|t5|None, display name)."""
+    """Return (t3|t4|t5|t6|t7|None, display name). T6/T7 are prism same as T5."""
     data = identity_json.get("data") or {}
     name = ((data.get("attributes") or {}).get("full_name")) or "Patron"
     if is_campaign_creator(identity_json):
@@ -107,6 +107,8 @@ def map_tier(identity_json: dict[str, Any]) -> tuple[str | None, str]:
     t3 = os.getenv("PATREON_TIER_T3") or ""
     t4 = os.getenv("PATREON_TIER_T4") or ""
     t5 = os.getenv("PATREON_TIER_T5") or ""
+    t6 = os.getenv("PATREON_TIER_T6") or ""
+    t7 = os.getenv("PATREON_TIER_T7") or ""
     entitled: list[str] = []
     titles: dict[str, str] = {}
     for row in included:
@@ -114,18 +116,25 @@ def map_tier(identity_json: dict[str, Any]) -> tuple[str | None, str]:
             tid = str(row.get("id") or "")
             titles[tid] = ((row.get("attributes") or {}).get("title") or "").lower()
             entitled.append(tid)
-    # membership include may nest; also scan relationships
-    rel = (((data.get("relationships") or {}).get("memberships") or {}).get("data")) or []
-    # entitled tiers appear as type=tier in included when currently_entitled_tiers is requested
+    # Highest paid wins: t7 > t6 > t5 > t4 > t3 (t5/t6/t7 all prism frames).
+    order = {"t3": 1, "t4": 2, "t5": 3, "t6": 4, "t7": 5}
     rank = None
+
+    def bump(next_rank: str) -> None:
+        nonlocal rank
+        if rank is None or order.get(next_rank, 0) > order.get(rank, 0):
+            rank = next_rank
+
     for tid in entitled:
         title = titles.get(tid, "")
-        if tid == t5 or "t5" in title or "幻彩" in title or "prism" in title:
-            rank = "t5"
+        if tid == t7 or "t7" in title:
+            bump("t7")
+        elif tid == t6 or "t6" in title:
+            bump("t6")
+        elif tid == t5 or "t5" in title or "幻彩" in title or "prism" in title:
+            bump("t5")
         elif tid == t4 or "t4" in title or "黄金" in title or "gold" in title:
-            if rank != "t5":
-                rank = "t4"
+            bump("t4")
         elif tid == t3 or "t3" in title or "白银" in title or "silver" in title:
-            if rank not in {"t4", "t5"}:
-                rank = "t3"
+            bump("t3")
     return rank, name
