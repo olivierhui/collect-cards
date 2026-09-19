@@ -484,9 +484,13 @@ body.hide-owned-badge .slot .count { display: none !important; }
 }
 .holo-back .holo-filigree { z-index: 6; }
 .holo-back-inner {
-  position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 6px; color: #5a4630; text-align: center;
-  font-family: "Noto Serif SC", serif;
+  position: absolute; inset: 0; z-index: 8; color: #5a4630; text-align: center;
+  font-family: "Noto Serif SC", serif; pointer-events: none;
+}
+.holo-back-inner .back-mod {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(var(--s, 1));
+  transform-origin: center center; white-space: nowrap; max-width: 90%;
 }
 .holo-back-kicker { font-size: 11px; letter-spacing: 0.28em; }
 .holo-back-mono {

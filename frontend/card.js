@@ -131,13 +131,13 @@
           <svg class="holo-filigree bl" viewBox="0 0 86 86"><use href="#filigree-corner"/></svg>
           <svg class="holo-filigree br" viewBox="0 0 86 86"><use href="#filigree-corner"/></svg>
           <div class="holo-back-inner">
-            <div class="holo-back-kicker"></div>
-            <div class="holo-back-mono"></div>
-            <div class="holo-back-brand"></div>
-            <div class="holo-back-sub"></div>
-            <div class="holo-back-rule"></div>
-            <div class="holo-back-edition"></div>
-            <div class="holo-back-serial"></div>
+            <div class="back-mod holo-back-kicker" data-back="kicker"></div>
+            <div class="back-mod holo-back-mono" data-back="mono"></div>
+            <div class="back-mod holo-back-brand" data-back="brand"></div>
+            <div class="back-mod holo-back-sub" data-back="sub"></div>
+            <div class="back-mod holo-back-rule" data-back="rule"></div>
+            <div class="back-mod holo-back-edition" data-back="edition"></div>
+            <div class="back-mod holo-back-serial" data-back="serial"></div>
           </div>
         </div>
       </div>
@@ -198,6 +198,27 @@
     setTxt(".holo-back-sub", this.meta.backSub || "");
     setTxt(".holo-back-edition", this.meta.edition || "");
     setTxt(".holo-back-serial", serial);
+    this.applyBackLayout();
+  };
+
+  CardView.prototype.applyBackLayout = function () {
+    const lay = this.meta.backLayout || {};
+    const fallback = {
+      kicker: { x: 50, y: 40, s: 1 },
+      mono: { x: 50, y: 50, s: 1 },
+      brand: { x: 50, y: 60, s: 1 },
+      sub: { x: 50, y: 66, s: 1 },
+      rule: { x: 50, y: 72, s: 1 },
+      serial: { x: 50, y: 78, s: 1 },
+      edition: { x: 50, y: 84, s: 1 },
+    };
+    this.root.querySelectorAll("[data-back]").forEach((el) => {
+      const L = lay[el.dataset.back] || fallback[el.dataset.back];
+      if (!L) return;
+      el.style.left = L.x + "%";
+      el.style.top = L.y + "%";
+      el.style.setProperty("--s", String(L.s || 1));
+    });
   };
 
   CardView.prototype.load = function () {
