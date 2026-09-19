@@ -7,25 +7,49 @@
     "主体由 rembg/birefnet-general 抠出。"
   ],
   "extras": [],
-  "name": "Alisa Mikhailovna Kujou",
+  "name": "Marin Kitagawa, Sajuna Inui, Shinju Inui",
   "brand": "18animegirls",
-  "serial": "S1-001-1",
+  "serial": "MEM-01",
   "date": "",
   "edition": "",
   "grade": "prism",
   "eyes": [],
   "chest": [
     {
-      "x": 0.2503007494976851,
-      "y": 0.46080205368618576,
-      "r": 0.12706424877801245,
+      "x": 0.2727477503007495,
+      "y": 0.48674610543342356,
+      "r": 0.055,
       "who": 1
     },
     {
-      "x": 0.4779788006118752,
-      "y": 0.49998973906744504,
-      "r": 0.12706424877801245,
+      "x": 0.31764204255630824,
+      "y": 0.4554456498884243,
+      "r": 0.055,
       "who": 1
+    },
+    {
+      "x": 0.3753632754563123,
+      "y": 0.4361837639436935,
+      "r": 0.11264120432478077,
+      "who": 2
+    },
+    {
+      "x": 0.575784223025771,
+      "y": 0.4783190303326038,
+      "r": 0.11264120432478077,
+      "who": 2
+    },
+    {
+      "x": 0.7216905275316219,
+      "y": 0.532493084552159,
+      "r": 0.055485881258870016,
+      "who": 3
+    },
+    {
+      "x": 0.6848130731788415,
+      "y": 0.43859144512919074,
+      "r": 0.055485881258870016,
+      "who": 3
     }
   ],
   "depth": 29,
@@ -43,9 +67,9 @@
       "s": 1
     },
     "mono": {
-      "x": 50.480995741695196,
-      "y": 41.400470286164584,
-      "s": 2.197691127232143
+      "x": 50.64136156469376,
+      "y": 41.400492109202226,
+      "s": 1.8177010672433034
     },
     "brand": {
       "x": 50.641347032222264,
@@ -74,9 +98,9 @@
     }
   },
   "serialUrl": "https://www.patreon.com/18animegirls/posts/t2-t3-alisa-tiao-156225800https://www.patreon.com/18animegirls/posts/t2-t3-alisa-tiao-156225800",
-  "backKicker": "PERSONAL COLLECTION",
-  "backMark": "S",
+  "backKicker": "MEMORIAL COLLECTION",
+  "backMark": "SSS",
   "backBrand": "18 ANIME GIRLS",
   "backSub": "",
-  "backLine": "Alya Sometimes Hides Her Feelings in Russian"
+  "backLine": "My Dress-Up Darling"
 }

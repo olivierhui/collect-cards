@@ -10,20 +10,22 @@
   "name": "Kana Arima",
   "brand": "18animegirls",
   "serial": "S1-004-1",
-  "date": "2026-09-19",
+  "date": "",
   "edition": "",
   "grade": "prism",
   "eyes": [],
   "chest": [
     {
-      "x": 0.42907616206728477,
-      "y": 0.42379146193721867,
-      "r": 0.08730533729495739
+      "x": 0.4394979786785391,
+      "y": 0.44822244265915023,
+      "r": 0.09474998581190776,
+      "who": 1
     },
     {
-      "x": 0.587809407217581,
-      "y": 0.42270301378388564,
-      "r": 0.08730533729495739
+      "x": 0.6110583097979957,
+      "y": 0.43257199665627416,
+      "r": 0.09474998581190776,
+      "who": 1
     }
   ],
   "depth": 29,
@@ -34,9 +36,47 @@
   "tilt": true,
   "float": true,
   "gaze": false,
-  "serialUrl": "https://www.patreon.com/18animegirls/posts/t2-t3-kana-arima-168163251",
+  "backLayout": {
+    "kicker": {
+      "x": 51.282694064444534,
+      "y": 57.41675892461875,
+      "s": 1
+    },
+    "mono": {
+      "x": 50.480995741695196,
+      "y": 41.400470286164584,
+      "s": 2.197691127232143
+    },
+    "brand": {
+      "x": 50.641347032222264,
+      "y": 64.24532271668846,
+      "s": 0.94
+    },
+    "sub": {
+      "x": 50,
+      "y": 66,
+      "s": 1
+    },
+    "rule": {
+      "x": 50,
+      "y": 72,
+      "s": 1
+    },
+    "serial": {
+      "x": 50,
+      "y": 78,
+      "s": 1
+    },
+    "edition": {
+      "x": 50,
+      "y": 84,
+      "s": 1
+    }
+  },
+  "serialUrl": "https://www.patreon.com/18animegirls/posts/t2-t3-alisa-tiao-156225800https://www.patreon.com/18animegirls/posts/t2-t3-alisa-tiao-156225800",
   "backKicker": "PERSONAL COLLECTION",
   "backMark": "S",
   "backBrand": "18 ANIME GIRLS",
-  "backSub": ""
+  "backSub": "",
+  "backLine": "Oshi No Ko"
 }

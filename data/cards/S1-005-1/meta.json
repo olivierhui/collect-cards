@@ -7,25 +7,37 @@
     "主体由 rembg/birefnet-general 抠出。"
   ],
   "extras": [],
-  "name": "Alisa Mikhailovna Kujou",
+  "name": "MaoMao",
   "brand": "18animegirls",
-  "serial": "S1-001-1",
+  "serial": "S1-005-1",
   "date": "",
   "edition": "",
   "grade": "prism",
   "eyes": [],
   "chest": [
     {
-      "x": 0.2503007494976851,
-      "y": 0.46080205368618576,
-      "r": 0.12706424877801245,
+      "x": 0.6783996028566188,
+      "y": 0.5493472347537985,
+      "r": 0.055,
       "who": 1
     },
     {
-      "x": 0.4779788006118752,
-      "y": 0.49998973906744504,
-      "r": 0.12706424877801245,
+      "x": 0.5934212664118834,
+      "y": 0.5493472347537985,
+      "r": 0.055,
       "who": 1
+    },
+    {
+      "x": 0.45392828690354015,
+      "y": 0.5698129885700749,
+      "r": 0.055,
+      "who": 2
+    },
+    {
+      "x": 0.4106373622285371,
+      "y": 0.5192506470803449,
+      "r": 0.055,
+      "who": 2
     }
   ],
   "depth": 29,
@@ -78,5 +90,5 @@
   "backMark": "S",
   "backBrand": "18 ANIME GIRLS",
   "backSub": "",
-  "backLine": "Alya Sometimes Hides Her Feelings in Russian"
+  "backLine": "The Apothecary Diaries"
 }
