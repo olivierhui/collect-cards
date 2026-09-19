@@ -638,3 +638,9 @@ body.editing .ed-block-off {
   font-family: "Noto Serif SC", serif; font-size: 18px; margin: 0 0 12px; cursor: pointer; list-style: none;
 }
 .admin-card summary::-webkit-details-marker { display: none; }
+
+.prop-link.is-disabled {
+  opacity: .45;
+  pointer-events: none;
+  cursor: default;
+}

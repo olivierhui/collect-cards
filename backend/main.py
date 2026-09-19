@@ -222,11 +222,15 @@ async def api_card(code: str, request: Request):
         import json
 
         meta = json.loads(Path(meta_path).read_text(encoding="utf-8"))
+    serial_url = ""
+    if isinstance(meta, dict):
+        serial_url = str(meta.get("serialUrl") or "").strip()
     return {
         "ok": True,
         "card": hit,
         "files": {k: f"/api/assets/{code}/{k}" for k in files if k != "meta.json"},
         "meta": meta,
+        "serialUrl": serial_url,
         "canSeeBack": True,
     }
 
