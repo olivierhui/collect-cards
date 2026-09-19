@@ -586,6 +586,16 @@
     }
   });
 
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const overlay = $("#overlay");
+    if (!overlay || overlay.classList.contains("hidden")) return;
+    const tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable)) return;
+    e.preventDefault();
+    doUndo();
+  });
+
   function applySite(site) {
     if (!site) return;
     if (site.pageTitle) document.title = site.pageTitle;

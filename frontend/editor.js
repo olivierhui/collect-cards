@@ -492,7 +492,7 @@
         <input id="ed-col-label" value="${site.collectionLabel || "打开 Patreon 帖子"}" />
       </label>
       <label>操作提示
-        <input id="ed-hint" value="${site.hint || ""}" placeholder="滚轮缩放 · 右键返回" />
+        <input id="ed-hint" value="${site.hint || ""}" placeholder="滚轮缩放 · 右键/Esc返回" />
       </label>
       <p class="muted tiny">集合 / Patreon 帖子链接按「每一张卡」设置：点格子 →「这一张的 Patreon 帖子」。只显示在属性面板里。</p>`;
     document.body.appendChild(box);
