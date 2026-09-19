@@ -414,7 +414,7 @@
     if (hint) hint.textContent = site.hint || t("hint");
     // Per-card collection / Patreon post link only (no site-wide fallback; no overlay chip).
     const url = (view.serialUrl || "").trim();
-    const label = site.collectionLabel || "打开 Patreon 帖子";
+    const label = site.collectionLabel || "打开 Patreon full set";
     const link = $("#prop-collection");
     if (link) {
       link.textContent = label;
