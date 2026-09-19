@@ -50,6 +50,11 @@
     this.ptr = { x: 0.5, y: 0.5 };
     this.target = { x: 0.5, y: 0.5 };
     this.flipped = false;
+    this.flipAngle = 0;
+    this.flipFrom = 0;
+    this.flipTo = 0;
+    this.flipT0 = 0;
+    this.flipDur = 680;
     this.jig = 0;
     this.jigT = 0;
     this.down = null;
@@ -234,8 +239,14 @@
   };
 
   CardView.prototype.setFlipped = function (on) {
-    this.flipped = !!on;
+    const next = !!on;
+    if (next === this.flipped && !this.flipT0) return;
+    this.flipFrom = this.flipAngle;
+    this.flipTo = next ? 180 : 0;
+    this.flipT0 = performance.now();
+    this.flipped = next;
     if (this.cardEl) this.cardEl.dataset.flipped = this.flipped ? "1" : "0";
+    if (this.cardEl) this.cardEl.classList.toggle("is-flipping", true);
     this.root.querySelectorAll(".holo-face-btn").forEach((b) => {
       b.classList.toggle("active", b.dataset.face === (this.flipped ? "back" : "front"));
     });
@@ -304,16 +315,35 @@
     const holoAmt = this.foilAmt;
     const bob1 = this.floatOn ? Math.sin(now / 820) * 7 : 0;
     const bob2 = this.floatOn ? Math.sin(now / 640 + 1.1) * 11 : 0;
-    const rx = this.tilt ? dy * -16 : 0;
-    const ry = this.tilt ? dx * 18 : 0;
-    const flipY = this.flipped ? 180 : 0;
+    // Animate flip with ease-in-out; soften pointer tilt while flipping
+    if (this.flipT0) {
+      const t = Math.min(1, (now - this.flipT0) / (this.flipDur || 680));
+      const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      this.flipAngle = this.flipFrom + (this.flipTo - this.flipFrom) * e;
+      if (t >= 1) {
+        this.flipAngle = this.flipTo;
+        this.flipT0 = 0;
+        if (this.cardEl) this.cardEl.classList.remove("is-flipping");
+      }
+    } else {
+      this.flipAngle = this.flipped ? 180 : 0;
+    }
+    const flipping = !!this.flipT0;
+    const tiltMix = flipping ? 0.2 : 1;
+    const rx = this.tilt ? dy * -16 * tiltMix : 0;
+    const ry = this.tilt ? dx * 18 * tiltMix : 0;
+    const flipY = this.flipAngle;
+    // slight lift at mid-flip so it feels like a real card turn
+    const mid = Math.sin((flipY % 180) * Math.PI / 180);
+    const lift = mid * 0.045;
     const host = this.cardEl || this.root;
     host.style.setProperty("--px", `${(px * 100).toFixed(2)}%`);
     host.style.setProperty("--py", `${(py * 100).toFixed(2)}%`);
     host.style.setProperty("--dx", dx.toFixed(4));
     host.style.setProperty("--dy", dy.toFixed(4));
     if (this.flip) {
-      this.flip.style.transform = `rotateY(${(flipY + ry).toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg)`;
+      this.flip.style.transform =
+        `rotateY(${(flipY + ry).toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) scale(${(1 + lift).toFixed(4)})`;
     }
     const zBg = -28 - 90 * d;
     const zSub = 36 + 150 * d;
