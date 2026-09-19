@@ -7,7 +7,7 @@
   const undo = [];
   const slotViews = [];
 
-  const TIER_FRAME = { t2: "iron", t3: "silver", t4: "gold", t5: "prism" };
+  const TIER_FRAME = { t2: "iron", t3: "silver", t4: "gold", t5: "prism", t6: "prism", t7: "prism" };
   let shelf = localStorage.getItem("cc-shelf") || "cabinet";
 
   async function api(url, opts) {
@@ -84,6 +84,8 @@
         <a class="btn" href="/auth/mock?tier=t3">${t("mock")} T3</a>
         <a class="btn" href="/auth/mock?tier=t4">${t("mock")} T4</a>
         <a class="btn" href="/auth/mock?tier=t5">${t("mock")} T5</a>
+        <a class="btn" href="/auth/mock?tier=t6">${t("mock")} T6</a>
+        <a class="btn" href="/auth/mock?tier=t7">${t("mock")} T7</a>
         <a class="btn" href="/auth/mock?tier=none">${t("mock")}</a>`;
       const loginHref = me && me.patreonReady ? "/auth/patreon" : "https://www.patreon.com/18animegirls";
       const login = me && me.patreonReady
@@ -98,6 +100,8 @@
          <a class="btn" href="/auth/mock?tier=t3">${t("mock")} T3</a>
          <a class="btn" href="/auth/mock?tier=t4">${t("mock")} T4</a>
          <a class="btn" href="/auth/mock?tier=t5">${t("mock")} T5</a>
+         <a class="btn" href="/auth/mock?tier=t6">${t("mock")} T6</a>
+         <a class="btn" href="/auth/mock?tier=t7">${t("mock")} T7</a>
          <a class="btn" href="/auth/mock?tier=none">${t("mock")}</a>`
       : "";
     const adminLink = me.user.creator || me.user.mock ? `<a class="btn" href="/admin">${t("admin")}</a>` : "";

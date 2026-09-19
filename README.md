@@ -111,7 +111,7 @@ S1-00X-N.zip
 复制 .env.example → .env
 start.cmd
 打开 http://127.0.0.1:8788
-没填 PATREON_CLIENT_ID 时用页面上的模拟 T3 / T4 / T5 / 未订
+没填 PATREON_CLIENT_ID 时用页面上的模拟 T3 / T4 / T5 / T6 / T7 / 未订
 ```
 
 验证：
@@ -124,6 +124,6 @@ start.cmd
 
 ## Patreon（这周不阻塞）
 
-`.env`：`PATREON_CLIENT_ID/SECRET`、`PATREON_REDIRECT_URI`、`PATREON_CAMPAIGN_ID`、`PATREON_TIER_T3/T4/T5`（档位数字 ID）。  
+`.env`：`PATREON_CLIENT_ID/SECRET`、`PATREON_REDIRECT_URI`、`PATREON_CAMPAIGN_ID`、`PATREON_TIER_T3/T4/T5/T6/T7`（档位数字 ID）。  
 OAuth scope：identity + `memberships.currently_entitled_tiers`。  
 网站不收款。订阅按钮跳回 Patreon。

@@ -4,7 +4,7 @@ from __future__ import annotations
 柜库存：T3+ 自动入柜，不是领取。
 
 规则（不要改口径）：
-- 只有当天仍是 t3/t4/t5 才会拿到「投放日 = 当天」的新卡。
+- 只有当天仍是 t3/t4/t5/t6/t7 才会拿到「投放日 = 当天」的新卡。
 - 框 = 第一次入柜那天的档位（silver/gold/prism）。升档不改旧框。
 - 降档：旧卡保留，从当天起不再发新卡。
 - 月中才升到 T3：升档前那些投放日没有 tierLog = 空槽，不补。
@@ -75,7 +75,7 @@ SITE_DEFAULT = {
 DATA.mkdir(parents=True, exist_ok=True)
 CARDS.mkdir(parents=True, exist_ok=True)
 
-PAID_TIERS = ("t3", "t4", "t5")
+PAID_TIERS = ("t3", "t4", "t5", "t6", "t7")
 FOLDER_RE = re.compile(r"^(S\d+)-(\d{1,3})(?:-(\d+))?$", re.I)
 MEM_RE = re.compile(r"^MEM-(\d{1,2})$", re.I)
 
@@ -332,7 +332,7 @@ def variant_for_tier(tier: str | None) -> str | None:
     if not paid_tier(tier):
         return None
     info = (catalog().get("tiers") or {}).get(tier) or {}
-    return info.get("variant") or {"t3": "silver", "t4": "gold", "t5": "prism"}.get(tier)
+    return info.get("variant") or {"t3": "silver", "t4": "gold", "t5": "prism", "t6": "prism", "t7": "prism"}.get(tier)
 
 
 def find_card(code: str) -> dict[str, Any] | None:
@@ -392,7 +392,7 @@ def ensure_entitlements(pid: str) -> dict[str, Any]:
     """
     会员每次拉柜 / 登录时调用。
     对 catalog 里每一个已投放日 d <= today：
-      - 若该日 tierLog 是 t3/t4/t5，或（d==today 且现在仍是 t3+），把该日的卡写入库存；
+      - 若该日 tierLog 是 t3–t7，或（d==today 且现在仍是 t3+），把该日的卡写入库存；
       - 框锁定为获得日（第一次写入）的档位，之后升档不改。
     没有历史 log 的旧日 = 空槽（月中升档不补前几天）。
     """
