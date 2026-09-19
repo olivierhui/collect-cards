@@ -245,11 +245,26 @@
     this.flipTo = next ? 180 : 0;
     this.flipT0 = performance.now();
     this.flipped = next;
-    if (this.cardEl) this.cardEl.dataset.flipped = this.flipped ? "1" : "0";
-    if (this.cardEl) this.cardEl.classList.toggle("is-flipping", true);
+    // Keep data-flipped on the outgoing face until the turn finishes so
+    // .holo-type (outside the flipper) does not pop in over the back.
+    if (this.cardEl) this.cardEl.classList.add("is-flipping");
     this.root.querySelectorAll(".holo-face-btn").forEach((b) => {
       b.classList.toggle("active", b.dataset.face === (this.flipped ? "back" : "front"));
     });
+    this.syncTypeChrome();
+  };
+
+  CardView.prototype.syncTypeChrome = function () {
+    // Front overlay text sits outside the 3D flipper. Only show it when the
+    // card is nearly face-up (last part of back→front), hide as soon as we leave front.
+    const show = this.flipAngle < 28;
+    if (this.type) {
+      this.type.style.visibility = show ? "visible" : "hidden";
+      this.type.style.opacity = show ? "1" : "0";
+    }
+    if (this.cardEl && !this.flipT0) {
+      this.cardEl.dataset.flipped = this.flipped ? "1" : "0";
+    }
   };
 
   CardView.prototype.bind = function () {
@@ -323,11 +338,15 @@
       if (t >= 1) {
         this.flipAngle = this.flipTo;
         this.flipT0 = 0;
-        if (this.cardEl) this.cardEl.classList.remove("is-flipping");
+        if (this.cardEl) {
+          this.cardEl.classList.remove("is-flipping");
+          this.cardEl.dataset.flipped = this.flipped ? "1" : "0";
+        }
       }
     } else {
       this.flipAngle = this.flipped ? 180 : 0;
     }
+    this.syncTypeChrome();
     const flipping = !!this.flipT0;
     const tiltMix = flipping ? 0.2 : 1;
     const rx = this.tilt ? dy * -16 * tiltMix : 0;
