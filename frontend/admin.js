@@ -192,6 +192,7 @@
       $("#txt-backMark").value = tx.backMark || "18";
       $("#txt-backBrand").value = tx.backBrand || "ANIME GIRLS";
       $("#txt-backSub").value = tx.backSub || "";
+      $("#txt-backLine").value = tx.backLine || "";
       setStatus("已读出文字（效果没动）", true);
     } catch (e) {
       setStatus(e.message, false);
@@ -241,6 +242,7 @@
           backMark: $("#txt-backMark").value,
           backBrand: $("#txt-backBrand").value,
           backSub: $("#txt-backSub").value,
+          backLine: $("#txt-backLine").value,
         }),
       });
       setStatus("文字已保存，扫光/眼睛/胸部没改。", true);
