@@ -470,8 +470,7 @@
   function applyZoom() {
     const el = document.querySelector("#viewer-stage .holo-card-wrap") || $("#float-stage .float-card");
     if (el) el.style.transform = `scale(${view.scale})`;
-    const ov = $("#overlay");
-    if (ov) ov.classList.toggle("is-zoomed", view.scale > 1.02);
+    /* cover chip stays visible while zoomed; tools are left-stacked */
   }
 
   function maxZoom() {
@@ -562,7 +561,7 @@
         if (!view.clear) return;
         // only bare backdrop / stage padding — not the card itself
         if (e.target.closest(".holo-card-wrap, .holo-card, #live-card, .float-card .card-root")) return;
-        if (e.target.closest(".ov-chip, .prop-sheet, button, a")) return;
+        if (e.target.closest(".ov-tools, .ov-chip, .prop-sheet, button, a")) return;
         view.clear = false;
         applyClear();
         refreshViewerChrome();
