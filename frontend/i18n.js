@@ -16,6 +16,7 @@
       owned: "已有 {n} 张",
       hideInfo: "收起属性",
       showInfo: "属性",
+      collapse: "收起",
       setCover: "设为封面",
       clearPreview: "清屏预览",
       exitClearPreview: "退出清屏",
@@ -32,6 +33,14 @@
       frame: { silver: "银", gold: "金", prism: "幻彩", iron: "铁" },
       mock: "模拟",
       hint: "滚轮缩放 · 右键返回 · 点击胸部跳动",
+      openFullSet: "打开 Patreon full set",
+      shelfCabinet: "个人典藏柜",
+      shelfMemorial: "纪念组",
+      pageTitle: "收集卡系列 · 展示柜",
+      subscribe: "去 Patreon 订阅",
+      loadFail: "加载失败：{msg}",
+      backKicker: "个人典藏",
+      backBrand: "ANIME GIRLS",
     },
     en: {
       login: "Patreon log in",
@@ -47,8 +56,9 @@
       statusKeep: "Upgrading does not change old frames.",
       empty: "Empty",
       owned: "{n} card(s)",
-      hideInfo: "Hide",
+      hideInfo: "Hide info",
       showInfo: "Info",
+      collapse: "Close",
       setCover: "Set as cover",
       clearPreview: "Clear view",
       exitClearPreview: "Exit clear",
@@ -65,6 +75,14 @@
       frame: { silver: "Silver", gold: "Gold", prism: "Prism", iron: "Iron" },
       mock: "Mock",
       hint: "Scroll to zoom · right-click to go back · tap chest to bounce",
+      openFullSet: "Open Patreon full set",
+      shelfCabinet: "Personal cabinet",
+      shelfMemorial: "Memorial",
+      pageTitle: "Collect Cards · Cabinet",
+      subscribe: "Subscribe on Patreon",
+      loadFail: "Failed to load: {msg}",
+      backKicker: "PERSONAL COLLECTION",
+      backBrand: "ANIME GIRLS",
     },
     ja: {
       login: "Patreon ログイン",
@@ -80,8 +98,9 @@
       statusKeep: "アップグレードしても古い枠は変わりません。",
       empty: "空き",
       owned: "{n} 枚",
-      hideInfo: "しまう",
-      showInfo: "属性",
+      hideInfo: "情報を閉じる",
+      showInfo: "情報",
+      collapse: "閉じる",
       setCover: "カバーにする",
       clearPreview: "クリア表示",
       exitClearPreview: "クリア解除",
@@ -98,6 +117,14 @@
       frame: { silver: "銀", gold: "金", prism: "虹", iron: "鉄" },
       mock: "テスト",
       hint: "ホイールで拡大 · 右クリックで戻る · 胸をタップでバウンド",
+      openFullSet: "Patreon full set を開く",
+      shelfCabinet: "個人キャビネット",
+      shelfMemorial: "メモリアル",
+      pageTitle: "コレクトカード · キャビネット",
+      subscribe: "Patreon で購読",
+      loadFail: "読み込み失敗：{msg}",
+      backKicker: "PERSONAL COLLECTION",
+      backBrand: "ANIME GIRLS",
     },
   };
 
@@ -140,5 +167,18 @@
     return map[v] || "";
   }
 
-  global.I18N = { STR, lang, setLang, t, tierLabel, frameLabel };
+  /** Fan-facing site copy: per-lang site.i18n[L], else i18n pack. Never leak zh-only site fields into en/ja. */
+  function siteText(site, field, fallbackKey) {
+    const L = lang();
+    const pack = site && site.i18n && site.i18n[L];
+    if (pack && pack[field] != null && String(pack[field]).trim() !== "") {
+      return String(pack[field]).trim();
+    }
+    if (L === "zh" && site && site[field] != null && String(site[field]).trim() !== "") {
+      return String(site[field]).trim();
+    }
+    return t(fallbackKey || field);
+  }
+
+  global.I18N = { STR, lang, setLang, t, tierLabel, frameLabel, siteText };
 })(window);

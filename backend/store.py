@@ -45,6 +45,7 @@ SITE_DEFAULT = {
     "serialCollectionUrl": "",
     "collectionLabel": "打开 Patreon full set",
     "hint": "滚轮缩放 · 右键返回",
+    "i18n": {},
     "layout": {
         "slotOrder": [],
         "hiddenSlots": [],
@@ -671,15 +672,15 @@ def save_site(payload: dict[str, Any]) -> dict[str, Any]:
     for key in SITE_DEFAULT:
         if key not in payload or payload[key] is None:
             continue
-        if key == "layout":
-            continue
-        if key == "memorial":
+        if key in ("layout", "memorial", "i18n"):
             continue
         cur[key] = str(payload[key]).strip()
     if isinstance(payload.get("layout"), dict):
         cur["layout"] = _normalize_layout(payload["layout"], cur.get("layout"))
     if isinstance(payload.get("memorial"), dict):
         cur["memorial"] = _normalize_memorial(payload["memorial"])
+    if isinstance(payload.get("i18n"), dict):
+        cur["i18n"] = _normalize_i18n(payload["i18n"], cur.get("i18n"))
     _write(SITE, cur)
     return cur
 

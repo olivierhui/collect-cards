@@ -191,9 +191,10 @@
     const mods = (window.__cabinet && window.__cabinet.me && window.__cabinet.me.site && window.__cabinet.me.site.layout && window.__cabinet.me.site.layout.modules) || {};
     if (mods.cardDate) setTxt(".holo-type-date", this.meta.date || "");
     else setTxt(".holo-type-date", "");
-    setTxt(".holo-back-kicker", this.meta.backKicker || "个人典藏");
+    const i18 = (k, fb) => (window.I18N && I18N.t ? I18N.t(k) : fb);
+    setTxt(".holo-back-kicker", this.meta.backKicker || i18("backKicker", "PERSONAL COLLECTION"));
     setTxt(".holo-back-mono", this.meta.backMark || "18");
-    setTxt(".holo-back-brand", this.meta.backBrand || "ANIME GIRLS");
+    setTxt(".holo-back-brand", this.meta.backBrand || i18("backBrand", "ANIME GIRLS"));
     setTxt(".holo-back-sub", this.meta.backSub || "");
     setTxt(".holo-back-edition", this.meta.edition || "");
     setTxt(".holo-back-serial", serial);
