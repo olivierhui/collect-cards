@@ -3,7 +3,7 @@
   let me = null;
   let cabinet = null;
   let viewer = null;
-  let view = { cid: null, cards: [], selected: null, simple: localStorage.getItem("cc-simple") === "1", scale: 1 };
+  let view = { cid: null, cards: [], selected: null, simple: localStorage.getItem("cc-simple") === "1", clear: false, scale: 1 };
   const undo = [];
   const slotViews = [];
 
@@ -327,8 +327,10 @@
     view.cid = "mem-" + index;
     view.cards = s.cards || [s.cover];
     view.selected = s.cover;
+    view.clear = false;
     $("#overlay").classList.remove("hidden");
     applySimple();
+    applyClear();
     await showCard(view.selected);
     refreshViewerChrome();
   }
@@ -373,8 +375,10 @@
     view.cid = cid;
     view.cards = (slot.cards || []).slice().sort((a, b) => (a.n || 0) - (b.n || 0));
     view.selected = slot.cover || view.cards[0];
+    view.clear = false;
     $("#overlay").classList.remove("hidden");
     applySimple();
+    applyClear();
     await showCard(view.selected);
     refreshViewerChrome();
   }
@@ -406,9 +410,12 @@
     }
     $("#btn-hide-info").textContent = view.simple ? t("showInfo") : t("hideInfo");
     $("#btn-cover").textContent = t("setCover");
+    const clearBtn = $("#btn-clear-preview");
+    if (clearBtn) clearBtn.textContent = view.clear ? t("exitClearPreview") : t("clearPreview");
     $("#btn-phone").textContent = t("wallpaperPhone");
     $("#btn-desk").textContent = t("wallpaperDesk");
     $("#close-viewer").textContent = t("close");
+    applyClear();
     const hint = $("#viewer-hint");
     const site = (me && me.site) || {};
     if (hint) hint.textContent = site.hint || t("hint");
@@ -437,8 +444,17 @@
   }
 
   function applySimple() {
-    $("#overlay").classList.toggle("viewer-simple", !!view.simple);
+    $("#overlay").classList.toggle("viewer-simple", !!view.simple && !view.clear);
     localStorage.setItem("cc-simple", view.simple ? "1" : "0");
+  }
+
+  function applyClear() {
+    const ov = $("#overlay");
+    if (!ov) return;
+    ov.classList.toggle("viewer-clear", !!view.clear);
+    applySimple();
+    const btn = $("#btn-clear-preview");
+    if (btn) btn.textContent = view.clear ? t("exitClearPreview") : t("clearPreview");
   }
 
   function applyModules() {
@@ -454,6 +470,8 @@
   function applyZoom() {
     const el = document.querySelector("#viewer-stage .holo-card-wrap") || $("#float-stage .float-card");
     if (el) el.style.transform = `scale(${view.scale})`;
+    const ov = $("#overlay");
+    if (ov) ov.classList.toggle("is-zoomed", view.scale > 1.02);
   }
 
   function maxZoom() {
@@ -527,6 +545,16 @@
     if (x) x.onclick = () => {
       if (!view.simple) toggleProps();
     };
+    const clearBtn = $("#btn-clear-preview");
+    if (clearBtn) {
+      clearBtn.onclick = () => {
+        const was = view.clear;
+        pushUndo(() => { view.clear = was; applyClear(); refreshViewerChrome(); });
+        view.clear = !view.clear;
+        applyClear();
+        refreshViewerChrome();
+      };
+    }
     const stage = $("#float-stage");
     if (stage) {
       stage.addEventListener("wheel", (e) => {
@@ -563,6 +591,8 @@
       if (view.selected) wallpaper(1920, 1080, { files: { "original.png": `/api/assets/${view.selected.code}/original.png` }, card: view.selected });
     };
     $("#close-viewer").onclick = () => {
+      view.clear = false;
+      applyClear();
       $("#overlay").classList.add("hidden");
       if (viewer) { viewer.destroy(); viewer = null; }
     };

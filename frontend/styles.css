@@ -94,8 +94,23 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
   padding: 0;
 }
 .overlay.hidden { display: none; }
-.overlay.viewer-simple { background: rgba(10, 9, 8, .28); }
 .overlay.viewer-simple .prop-sheet { transform: translateX(110%); pointer-events: none; opacity: 0; }
+/* 清屏预览：全黑底，只留卡片 */
+.overlay.viewer-clear {
+  background: #000;
+}
+.overlay.viewer-clear .viewer-strip,
+.overlay.viewer-clear .prop-sheet,
+.overlay.viewer-clear .ov-chip:not(#btn-clear-preview),
+.overlay.viewer-clear .holo-face-toggle {
+  display: none !important;
+}
+.overlay.viewer-clear #btn-clear-preview {
+  opacity: .55;
+}
+.overlay.viewer-clear #btn-clear-preview:hover {
+  opacity: 1;
+}
 .float-stage {
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -187,7 +202,14 @@ body.hide-owned-badge .slot .count { display: none !important; }
   border: 1px solid rgba(232,195,106,.28);
 }
 #btn-hide-info { left: 18px; }
+#btn-clear-preview { left: 90px; }
+#btn-cover { left: 198px; }
+@media (max-width: 720px) {
+  #btn-cover { left: 18px; top: 58px; }
+  #btn-clear-preview { left: 90px; }
+}
 .ov-close { right: 18px; }
+.overlay.is-zoomed #btn-cover { display: none !important; }
 .prop-sheet {
   position: fixed; top: 64px; right: 18px; bottom: 24px; width: min(320px, 86vw);
   z-index: 21;
@@ -212,8 +234,8 @@ body.hide-owned-badge .slot .count { display: none !important; }
 .strip-card span { display: block; font-size: 10px; margin-top: 4px; }
 .strip-card.on { outline: 2px solid var(--gold); }
 .cover-fab {
-  position: absolute; right: 8px; bottom: 8px; z-index: 6;
-  background: rgba(20,16,12,.88);
+  /* legacy; cover control is now an ov-chip */
+  display: none;
 }
 .slot-live,
 .slot .holo-card-wrap.is-mini {
