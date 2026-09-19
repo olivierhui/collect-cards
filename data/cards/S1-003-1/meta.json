@@ -14,17 +14,28 @@
   "edition": "",
   "grade": "prism",
   "eyes": [],
-  "chest": [],
+  "chest": [
+    {
+      "x": 0.360131356103391,
+      "y": 0.5805422034622557,
+      "r": 0.1115254514130667
+    },
+    {
+      "x": 0.5621555259286903,
+      "y": 0.5631253557411052,
+      "r": 0.1115254514130667
+    }
+  ],
   "depth": 29,
   "glow": 45,
   "foil": 58,
   "foilStyle": "gold",
   "foilTarget": "bg",
-  "tilt": false,
+  "tilt": true,
   "float": true,
   "gaze": false,
   "serialUrl": "",
-  "backKicker": "PERSONAL COLLECTION",
+  "backKicker": "MEMORIAL COLLECTION",
   "backMark": "S",
   "backBrand": "18 ANIME GIRLS",
   "backSub": ""

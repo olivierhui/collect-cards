@@ -14,13 +14,24 @@
   "edition": "",
   "grade": "prism",
   "eyes": [],
-  "chest": [],
+  "chest": [
+    {
+      "x": 0.42907616206728477,
+      "y": 0.42379146193721867,
+      "r": 0.08730533729495739
+    },
+    {
+      "x": 0.587809407217581,
+      "y": 0.42270301378388564,
+      "r": 0.08730533729495739
+    }
+  ],
   "depth": 29,
   "glow": 45,
   "foil": 58,
   "foilStyle": "gold",
   "foilTarget": "bg",
-  "tilt": false,
+  "tilt": true,
   "float": true,
   "gaze": false,
   "serialUrl": "",
