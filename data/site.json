@@ -10,6 +10,35 @@
   "serialCollectionUrl": "https://cursor.com/loginDeepGrokBot",
   "collectionLabel": "打开 Patreon full set",
   "hint": "滚轮缩放 · 右键返回 · 点击胸部跳动",
+  "i18n": {
+    "zh": {
+      "title": "个人典藏柜",
+      "gate": "登录后打开你的个人典藏柜。当天仍在订的会员，卡会自动入柜。",
+      "hint": "滚轮缩放 · 右键返回 · 点击胸部跳动",
+      "collectionLabel": "打开 Patreon full set",
+      "subscribeLabel": "去 Patreon 订阅",
+      "pageTitle": "收集卡系列 · 展示柜",
+      "memorialTitle": "纪念组"
+    },
+    "en": {
+      "title": "Personal cabinet",
+      "gate": "Log in to open your cabinet. Active patrons receive that day’s cards automatically.",
+      "hint": "Scroll to zoom · right-click to go back · tap chest to bounce",
+      "collectionLabel": "Open Patreon full set",
+      "subscribeLabel": "Subscribe on Patreon",
+      "pageTitle": "Collect Cards · Cabinet",
+      "memorialTitle": "Memorial"
+    },
+    "ja": {
+      "title": "個人キャビネット",
+      "gate": "ログインすると個人キャビネットが開きます。有効な会員はその日のカードが自動で入ります。",
+      "hint": "ホイールで拡大 · 右クリックで戻る · 胸をタップでバウンド",
+      "collectionLabel": "Patreon full set を開く",
+      "subscribeLabel": "Patreon で購読",
+      "pageTitle": "コレクトカード · キャビネット",
+      "memorialTitle": "メモリアル"
+    }
+  },
   "layout": {
     "slotOrder": [
       "001",
@@ -61,34 +90,5 @@
       "",
       ""
     ]
-  },
-  "i18n": {
-    "zh": {
-      "title": "个人典藏柜",
-      "gate": "登录后打开你的个人典藏柜。当天仍在订的会员，卡会自动入柜。",
-      "hint": "滚轮缩放 · 右键返回 · 点击胸部跳动",
-      "collectionLabel": "打开 Patreon full set",
-      "subscribeLabel": "去 Patreon 订阅",
-      "pageTitle": "收集卡系列 · 展示柜",
-      "memorialTitle": "纪念组"
-    },
-    "en": {
-      "title": "Personal cabinet",
-      "gate": "Log in to open your cabinet. Active patrons receive that day’s cards automatically.",
-      "hint": "Scroll to zoom · right-click to go back · tap chest to bounce",
-      "collectionLabel": "Open Patreon full set",
-      "subscribeLabel": "Subscribe on Patreon",
-      "pageTitle": "Collect Cards · Cabinet",
-      "memorialTitle": "Memorial"
-    },
-    "ja": {
-      "title": "個人キャビネット",
-      "gate": "ログインすると個人キャビネットが開きます。有効な会員はその日のカードが自動で入ります。",
-      "hint": "ホイールで拡大 · 右クリックで戻る · 胸をタップでバウンド",
-      "collectionLabel": "Patreon full set を開く",
-      "subscribeLabel": "Patreon で購読",
-      "pageTitle": "コレクトカード · キャビネット",
-      "memorialTitle": "メモリアル"
-    }
   }
 }
