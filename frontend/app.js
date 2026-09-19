@@ -412,18 +412,26 @@
     const hint = $("#viewer-hint");
     const site = (me && me.site) || {};
     if (hint) hint.textContent = site.hint || t("hint");
-    // Per-card collection / Patreon post link only (no site-wide fallback; no overlay chip).
-    const url = (view.serialUrl || "").trim();
+    // Per-card Patreon full set link (属性面板). Always show the control; disable if unset.
+    const url = (
+      (view.serialUrl || "")
+      || (view.selected && view.selected.serialUrl)
+      || (site.collectionUrl || "")
+      || ""
+    ).trim();
     const label = site.collectionLabel || "打开 Patreon full set";
     const link = $("#prop-collection");
     if (link) {
       link.textContent = label;
+      link.classList.remove("hidden");
       if (url) {
         link.href = url;
-        link.classList.remove("hidden");
+        link.removeAttribute("aria-disabled");
+        link.classList.remove("is-disabled");
       } else {
-        link.removeAttribute("href");
-        link.classList.add("hidden");
+        link.href = "#";
+        link.setAttribute("aria-disabled", "true");
+        link.classList.add("is-disabled");
       }
     }
   }
@@ -488,7 +496,14 @@
     const host = $("#live-card");
     if (!host) return;
     viewer = new CardView(host, spec);
-    view.serialUrl = (spec.meta && spec.meta.serialUrl) || "";
+    const meta = (spec && spec.meta) || {};
+    view.serialUrl = (
+      (spec && spec.serialUrl)
+      || meta.serialUrl
+      || (view.selected && view.selected.serialUrl)
+      || ""
+    ).trim();
+    if (view.selected) view.selected.serialUrl = view.serialUrl;
     view.scale = 1;
     applyZoom();
     const faceBtns = document.querySelectorAll("#live-card [data-face]");
@@ -496,6 +511,7 @@
       if (b.dataset.face === "front") b.textContent = t("front");
       if (b.dataset.face === "back") b.textContent = t("back");
     });
+    refreshViewerChrome();
   }
 
   function wireViewer() {
@@ -578,6 +594,14 @@
       a.click();
     }, "image/png");
   }
+
+  document.addEventListener("click", (e) => {
+    const a = e.target && e.target.closest && e.target.closest("#prop-collection");
+    if (!a) return;
+    if (a.classList.contains("is-disabled") || a.getAttribute("aria-disabled") === "true") {
+      e.preventDefault();
+    }
+  });
 
   document.addEventListener("contextmenu", (e) => {
     if ($("#overlay") && !$("#overlay").classList.contains("hidden")) {
