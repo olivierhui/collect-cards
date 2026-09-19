@@ -101,6 +101,7 @@ button.primary { background: var(--gold); color: #1a1408; border-color: var(--go
 }
 .overlay.viewer-clear .viewer-strip,
 .overlay.viewer-clear .prop-sheet,
+.overlay.viewer-clear .ov-tools,
 .overlay.viewer-clear .ov-chip,
 .overlay.viewer-clear .holo-face-toggle,
 .overlay.viewer-clear .cover-fab {
@@ -194,20 +195,24 @@ body.hide-owned-badge .slot .count { display: none !important; }
   border-radius: 999px; border: 1px solid rgba(232,195,106,.45);
   color: var(--gold); font-size: 13px; text-decoration: none;
 }
+.ov-tools {
+  position: fixed; z-index: 22; top: 18px; left: 18px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+  max-width: min(160px, 42vw);
+}
+.ov-tools .ov-chip {
+  position: static;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+}
 .ov-chip {
   position: fixed; z-index: 22; top: 18px;
   background: rgba(22,20,18,.82); backdrop-filter: blur(12px);
   border: 1px solid rgba(232,195,106,.28);
+  padding: 8px 14px;
 }
-#btn-hide-info { left: 18px; }
-#btn-clear-preview { left: 90px; }
-#btn-cover { left: 198px; }
-@media (max-width: 720px) {
-  #btn-cover { left: 18px; top: 58px; }
-  #btn-clear-preview { left: 90px; }
-}
-.ov-close { right: 18px; }
-.overlay.is-zoomed #btn-cover { display: none !important; }
+.ov-close { right: 18px; left: auto; }
 .prop-sheet {
   position: fixed; top: 64px; right: 18px; bottom: 24px; width: min(320px, 86vw);
   z-index: 21;
