@@ -147,8 +147,8 @@ async def auth_callback(request: Request, code: str = "", state: str = ""):
 async def auth_mock(request: Request, tier: str = "t3", name: str = "测试会员"):
     if patreon.configured() and not os.getenv("ALLOW_MOCK"):
         raise HTTPException(400, "已接 Patreon，关闭模拟登录")
-    if tier not in {"t2", "t3", "t4", "t5", "none"}:
-        raise HTTPException(400, "tier 只能是 t2/t3/t4/t5/none")
+    if tier not in {"t2", "t3", "t4", "t5", "t6", "t7", "none"}:
+        raise HTTPException(400, "tier 只能是 t2/t3/t4/t5/t6/t7/none")
     pid = request.session.get("pid") or f"mock-{secrets.token_hex(4)}"
     login_and_grant(request, pid, name, None if tier == "none" else tier)
     return RedirectResponse("/")
